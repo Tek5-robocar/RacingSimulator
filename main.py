@@ -1,28 +1,19 @@
+import os
 import socket
 import subprocess
 import time
 import asyncio
+
+import pandas as pd
 from pynput import keyboard
 from threading import Thread  # To run pynput in a separate thread
+
+from unity import send_command_to_unity
 
 # Connect to Unity server
 host = "127.0.0.1"
 port = 5000
 last_click = time.time()
-
-def send_command_to_unity(command) -> str:
-    """Send a command to the Unity server."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            s.connect((host, port))
-            # print(f'sending {command}')
-            s.sendall(command.encode('utf-8'))
-            response = s.recv(1024).decode('utf-8')
-            # print(f"Unity responded: {response}")
-            return response
-        except ConnectionRefusedError:
-            print("Could not connect to Unity server. Is it running?")
-            return ""
 
 speed = 0
 speed_count = 0
@@ -31,6 +22,41 @@ steering_count = 0
 stop = False
 active_keys = set()
 
+csv_file = "lidar_data.csv"
+columns = [f"lidar_{i}" for i in range(1, 11)]  # Creating column names like lidar_1, lidar_2, ..., lidar_32
+columns.append("speed")
+columns.append("steering")
+
+
+def initialize_csv():
+    if not os.path.exists(csv_file):
+        df = pd.DataFrame(columns=columns)
+        df.to_csv(csv_file, mode='w', index=False)
+
+
+it = 0
+
+
+def get_infos_raycast():
+    global it
+    x = send_command_to_unity('GET_INFOS_RAYCAST')
+    x_splitted = x.split(':')
+    if x_splitted[0] == 'KO':
+        return
+    x = [elem[:3] for elem in x_splitted[1:]]
+    try:
+        x.append(str(speed)[:3])
+        x.append(str(steering)[:3])
+        lidar_data = pd.DataFrame([x], columns=columns)
+        if it == 0:
+            lidar_data.to_csv(csv_file, mode='a', header=True, index=False)
+        else:
+            lidar_data.to_csv(csv_file, mode='a', header=False, index=False)
+        it += 1
+    except Exception as e:
+        os.write(2, f"Error writing to CSV: {str(e)}\n".encode())
+
+
 def on_press(key):
     """Handle key press events."""
     global last_click, speed, speed_count, steering, steering_count, active_key, stop
@@ -38,6 +64,7 @@ def on_press(key):
         active_keys.add(key)
 
         if keyboard.KeyCode.from_char('z') in active_keys:
+            get_infos_raycast()
             speed_count += 1
             last_click = time.time()
             if speed_count >= 10:
@@ -54,6 +81,7 @@ def on_press(key):
             print(f"up = {speed}]")
             send_command_to_unity(f"SET_SPEED:{speed}")
         if keyboard.KeyCode.from_char('s') in active_keys:
+            get_infos_raycast()
             speed_count += 1
             last_click = time.time()
             if speed_count >= 10:
@@ -70,6 +98,7 @@ def on_press(key):
             print(f"down = {speed}")
             send_command_to_unity(f"SET_SPEED:{speed}")
         if keyboard.KeyCode.from_char('d') in active_keys:
+            get_infos_raycast()
             steering_count += 1
             last_click = time.time()
             if steering_count >= 10:
@@ -86,6 +115,7 @@ def on_press(key):
             print(f"right = {steering}")
             send_command_to_unity(f"SET_STEERING:{steering}")
         if keyboard.KeyCode.from_char('q') in active_keys:
+            get_infos_raycast()
             steering_count += 1
             last_click = time.time()
             if steering_count >= 10:
@@ -115,16 +145,19 @@ def on_press(key):
         # If we get an AttributeError, it's likely a special key (esc, etc.)
         pass  # Do nothing; just continue the program
 
+
 def on_release(key):
     """Handle key release events (optional)."""
     global active_keys
     active_keys.discard(key)  # Remove the key from active_keys when released
     pass
 
+
 def start_keyboard_listener():
     """Run the keyboard listener in a separate thread."""
     with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
         listener.join()
+
 
 async def control_loop():
     """Run the control loop asynchronously."""
@@ -142,14 +175,25 @@ async def control_loop():
         # Sleep for a short time to avoid blocking the main thread
         await asyncio.sleep(0.1)
 
+
+UNITY_BUILD_PATH = os.path.join(os.getcwd(), '..', 'unity-simulator', 'UnityBuild', 'RacingSimulator.x86_64')
+
+
 async def main():
     """Run the control loop and keyboard listener together."""
-    # Start the keyboard listener in a separate thread
+    unity_process = subprocess.Popen([UNITY_BUILD_PATH])
+    time.sleep(5)
+    initialize_csv()
+
     listener_thread = Thread(target=start_keyboard_listener, daemon=True)
     listener_thread.start()
 
     # Run the control loop
     await control_loop()
+    send_command_to_unity("END_SIMULATION")
+    if unity_process:
+        unity_process.terminate()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -48,28 +48,17 @@ def get_infos_raycast(speed, expected_speed, steering, expected_steering):
     x = [elem[:3] for elem in x_splitted[2:]]
     # print(x)
     try:
-        # if key_map['z']['activated'] == 1:
-        #     x.append(str(key_map['z']['value'])[:3])
-        # elif key_map['s']['activated'] == 0:
-        #     x.append(str(-key_map['s']['value'])[:3])
-        # else:
-        #     x.append(str(0)[:3])
         x.append(str(speed)[:3])
         x.append(str(expected_speed)[:3])
-        # if key_map['q']['activated'] == 1:
-        #     x.append(str(key_map['q']['value'])[:3])
-        # elif key_map['d']['activated'] == 1:
-        #     x.append(str(-key_map['d']['value'])[:3])
-        # else:
-        #     x.append(str(0)[:3])
         x.append(str(steering)[:3])
         x.append(str(expected_steering)[:3])
         # print(x)
         lidar_data = pd.DataFrame([x], columns=columns)
-        if it == 0:
-            lidar_data.to_csv(csv_file, mode='a', header=True, index=False)
+        if not os.path.exists(csv_file) and it == 0:
+            lidar_data.to_csv(csv_file, mode='w', header=True, index=False)  # Write with header
         else:
-            lidar_data.to_csv(csv_file, mode='a', header=False, index=False)
+            lidar_data.to_csv(csv_file, mode='a', header=False, index=False)  # Append without header
+
         it += 1
     except Exception as e:
         os.write(2, f"Error writing to CSV: {str(e)}\n".encode())
@@ -106,7 +95,7 @@ def on_release(key):
                 # print(f"Key {key.char} released. Duration: {duration:.4f} seconds, Value: {key_map[key.char]['value']:.1f}")
                 key_map[key.char]['activated'] = 0  # Mark the key as not pressed
                 key_map[key.char]['value'] = 0.0  # Reset the key value when released
-                
+
                 # Send stop commands to Unity based on the key
                 if key.char == 'z':
                     send_command_to_unity(f"SET_SPEED:0")
@@ -116,7 +105,7 @@ def on_release(key):
                     send_command_to_unity(f"SET_STEERING:0")
                 if key.char == 'q':
                     send_command_to_unity(f"SET_STEERING:0")
-        
+
         # Stop the listener when 'esc' is pressed
         if key == keyboard.Key.esc:
             return False
@@ -126,7 +115,11 @@ def on_release(key):
 # Function to update key map values periodically
 def update_key_values():
     try:
+        last_time = time.time()
+
         while True:
+            current_time = time.time()
+
             for key in key_map:
                 if key_map[key]['activated'] == 1:
                     # Update the key's value by increasing it by 0.1 every 10 ms
@@ -134,7 +127,7 @@ def update_key_values():
                     key_map[key]['increase'] = True
                     # if key_map[key]['value'] == 1.0:  # Max value when held for 1 second
                     #     send_command_to_unity(f"SET_{'SPEED' if key in ['z', 's'] else 'STEERING'}:{key_map[key]['value']:.1f}")
-            
+
             # Periodically send commands to Unity based on key values
             # print(key_map['z']['value'])
             if key_map['z']['activated'] == 1 and key_map['z']['value'] > 0:
@@ -145,18 +138,15 @@ def update_key_values():
                 send_command_to_unity(f"SET_STEERING:{key_map['d']['value']}")
             if key_map['q']['activated'] == 1 and key_map['q']['value'] > 0:
                 send_command_to_unity(f"SET_STEERING:{-key_map['q']['value']}")
-            
+
             speed_input, speed_v = get_value_for_key('z')
             steering_input, steering_v = get_value_for_key('s')
-            print(get_value_for_key('z'))
-            
+
             next_speed = speed_v
             next_steering = steering_v
 
-            print(steering_input)
             if key_map[speed_input]['increase'] == True and speed_v > 0 and speed_v < 1:
                 next_speed+=0.1
-            print("oui")
             if key_map[speed_input]['increase'] == True and speed_v < 0 and speed_v > -1:
                 next_speed-=0.1
 
@@ -167,6 +157,18 @@ def update_key_values():
                 next_steering-=0.1
 
             get_infos_raycast(speed_v, next_speed, steering_v, next_steering)
+
+            if current_time - last_time >= 20:  # Check if 20 seconds have passed
+                last_time = current_time
+                send_command_to_unity(f"SET_RANDOM_POSITION")
+                for key, data in key_map.items():
+                    for sub_key, sub_value in data.items():
+                        if sub_key == 'value':
+                            data[sub_key] = 0  # Update the value directly in the dictionary
+                            sub_value = 0  # Update the local variable as well (optional for printing purposes)
+                        if sub_key == 'activated':
+                            data[sub_key] = 0  # Update the activated value directly in the dictionary
+                            sub_value = 0  # Update the local variable as well (optional for printing purposes)
 
             time.sleep(0.01)  # Wait for 10ms before updating again
 

@@ -23,7 +23,7 @@ stop = False
 active_keys = set()
 
 csv_file = "lidar_data.csv"
-columns = [f"lidar_{i}" for i in range(1, 11)]  # Creating column names like lidar_1, lidar_2, ..., lidar_32
+columns = [f"lidar_{i}" for i in range(1, 11)]  # Creating column names like lidar_1, lidar_2, ..., lidar_11
 columns.append("speed")
 columns.append("steering")
 
@@ -64,7 +64,6 @@ def on_press(key):
         active_keys.add(key)
 
         if keyboard.KeyCode.from_char('z') in active_keys:
-            get_infos_raycast()
             speed_count += 1
             last_click = time.time()
             if speed_count >= 10:
@@ -81,7 +80,6 @@ def on_press(key):
             print(f"up = {speed}]")
             send_command_to_unity(f"SET_SPEED:{speed}")
         if keyboard.KeyCode.from_char('s') in active_keys:
-            get_infos_raycast()
             speed_count += 1
             last_click = time.time()
             if speed_count >= 10:
@@ -98,7 +96,6 @@ def on_press(key):
             print(f"down = {speed}")
             send_command_to_unity(f"SET_SPEED:{speed}")
         if keyboard.KeyCode.from_char('d') in active_keys:
-            get_infos_raycast()
             steering_count += 1
             last_click = time.time()
             if steering_count >= 10:
@@ -115,7 +112,6 @@ def on_press(key):
             print(f"right = {steering}")
             send_command_to_unity(f"SET_STEERING:{steering}")
         if keyboard.KeyCode.from_char('q') in active_keys:
-            get_infos_raycast()
             steering_count += 1
             last_click = time.time()
             if steering_count >= 10:
@@ -163,6 +159,7 @@ async def control_loop():
     """Run the control loop asynchronously."""
     global last_click, stop
     random_position_last_sent = time.time()  # Initialize a timestamp for the last random position command
+    raycast_last_sent = time.time()  # Initialize a timestamp for the last random position command
 
     while stop != True:
         current_time = time.time()
@@ -171,6 +168,10 @@ async def control_loop():
         if current_time - random_position_last_sent > 5:
             send_command_to_unity("SET_RANDOM_POSITION")
             random_position_last_sent = current_time  # Update the timestamp of when the last random position was sent
+
+        if current_time - raycast_last_sent > 0.25:
+            get_infos_raycast()
+            raycast_last_sent = current_time  # Update the timestamp of when the last random position was sent
 
         # Sleep for a short time to avoid blocking the main thread
         await asyncio.sleep(0.1)
@@ -181,8 +182,8 @@ UNITY_BUILD_PATH = os.path.join(os.getcwd(), '..', 'unity-simulator', 'UnityBuil
 
 async def main():
     """Run the control loop and keyboard listener together."""
-    unity_process = subprocess.Popen([UNITY_BUILD_PATH])
-    time.sleep(5)
+    # unity_process = subprocess.Popen([UNITY_BUILD_PATH])
+    # time.sleep(5)
     initialize_csv()
 
     listener_thread = Thread(target=start_keyboard_listener, daemon=True)

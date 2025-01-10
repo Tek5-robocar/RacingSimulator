@@ -8,10 +8,10 @@ import os
 
 # Dictionary to store the values and activation state of keys pressed
 key_map = {
-    'z': {'value': 0.0, 'activated': 0, 'opposite': 's'},
-    'q': {'value': 0.0, 'activated': 0, 'opposite': 'd'},
-    's': {'value': 0.0, 'activated': 0, 'opposite': 'z'},
-    'd': {'value': 0.0, 'activated': 0, 'opposite': 'q'}
+    'z': {'value': 0.0, 'activated': 0, 'opposite': 's', 'increase': False},
+    'q': {'value': 0.0, 'activated': 0, 'opposite': 'd', 'increase': False},
+    's': {'value': 0.0, 'activated': 0, 'opposite': 'z', 'increase': False},
+    'd': {'value': 0.0, 'activated': 0, 'opposite': 'q', 'increase': False}
 }
 
 # activated 0 // not pressed and free
@@ -35,10 +35,10 @@ it = 0
 
 def get_value_for_key(key):
     if key_map[key]['activated'] == 1:
-        return key_map[key]['value']
-    return -key_map[key_map[key]['opposite']]['value']
+        return (key, key_map[key]['value'])
+    return (key_map[key]['opposite'], -key_map[key_map[key]['opposite']]['value'])
 
-def get_infos_raycast(expected_speed, expected_steering):
+def get_infos_raycast(speed, expected_speed, steering, expected_steering):
     global it
     x = send_command_to_unity('GET_INFOS_RAYCAST')
     x_splitted = x.split(':')
@@ -48,19 +48,21 @@ def get_infos_raycast(expected_speed, expected_steering):
     x = [elem[:3] for elem in x_splitted[2:]]
     # print(x)
     try:
-        if key_map['z']['activated'] == 1:
-            x.append(str(key_map['z']['value'])[:3])
-        elif key_map['s']['activated'] == 0:
-            x.append(str(-key_map['s']['value'])[:3])
-        else:
-            x.append(str(0)[:3])
+        # if key_map['z']['activated'] == 1:
+        #     x.append(str(key_map['z']['value'])[:3])
+        # elif key_map['s']['activated'] == 0:
+        #     x.append(str(-key_map['s']['value'])[:3])
+        # else:
+        #     x.append(str(0)[:3])
+        x.append(str(speed)[:3])
         x.append(str(expected_speed)[:3])
-        if key_map['q']['activated'] == 1:
-            x.append(str(key_map['q']['value'])[:3])
-        elif key_map['d']['activated'] == 1:
-            x.append(str(-key_map['d']['value'])[:3])
-        else:
-            x.append(str(0)[:3])
+        # if key_map['q']['activated'] == 1:
+        #     x.append(str(key_map['q']['value'])[:3])
+        # elif key_map['d']['activated'] == 1:
+        #     x.append(str(-key_map['d']['value'])[:3])
+        # else:
+        #     x.append(str(0)[:3])
+        x.append(str(steering)[:3])
         x.append(str(expected_steering)[:3])
         # print(x)
         lidar_data = pd.DataFrame([x], columns=columns)
@@ -129,6 +131,7 @@ def update_key_values():
                 if key_map[key]['activated'] == 1:
                     # Update the key's value by increasing it by 0.1 every 10 ms
                     key_map[key]['value'] = min(1.0, key_map[key]['value'] + 0.1)
+                    key_map[key]['increase'] = True
                     # if key_map[key]['value'] == 1.0:  # Max value when held for 1 second
                     #     send_command_to_unity(f"SET_{'SPEED' if key in ['z', 's'] else 'STEERING'}:{key_map[key]['value']:.1f}")
             
@@ -143,10 +146,27 @@ def update_key_values():
             if key_map['q']['activated'] == 1 and key_map['q']['value'] > 0:
                 send_command_to_unity(f"SET_STEERING:{-key_map['q']['value']}")
             
-            speed_v = get_value_for_key('z')
-            steering_v = get_value_for_key('s')
+            speed_input, speed_v = get_value_for_key('z')
+            steering_input, steering_v = get_value_for_key('s')
+            print(get_value_for_key('z'))
             
-            get_infos_raycast(speed_v, steering_v)
+            next_speed = speed_v
+            next_steering = steering_v
+
+            print(steering_input)
+            if key_map[speed_input]['increase'] == True and speed_v > 0 and speed_v < 1:
+                next_speed+=0.1
+            print("oui")
+            if key_map[speed_input]['increase'] == True and speed_v < 0 and speed_v > -1:
+                next_speed-=0.1
+
+
+            if key_map[steering_input]['increase'] == True and steering_v > 0 and steering_v < 1:
+                next_steering+=0.1
+            elif key_map[steering_input]['increase'] == True and steering_v < 0 and steering_v > -1:
+                next_steering-=0.1
+
+            get_infos_raycast(speed_v, next_speed, steering_v, next_steering)
 
             time.sleep(0.01)  # Wait for 10ms before updating again
 

@@ -41,7 +41,7 @@ def get_value_for_key(key):
     return (key_map[key]['opposite'], -key_map[key_map[key]['opposite']]['value'])
 
 def get_infos_raycast(speed, expected_speed, steering, expected_steering):
-    print(speed)
+    # print(speed)
     global it
     x = send_command_to_unity('GET_INFOS_RAYCAST')
     x_splitted = x.split(':')
@@ -98,17 +98,18 @@ def on_release(key):
                 duration = time.time() - press_time  # Calculate duration
                 # print(f"Key {key.char} released. Duration: {duration:.4f} seconds, Value: {key_map[key.char]['value']:.1f}")
                 key_map[key.char]['activated'] = 0  # Mark the key as not pressed
-                key_map[key.char]['value'] = 0.0  # Reset the key value when released
+                key_map[key.char]['increase'] = False  # Mark the key as not pressed
+                # key_map[key.char]['value'] = 0.0  # Reset the key value when released
 
                 # Send stop commands to Unity based on the key
-                if key.char == 'z':
-                    send_command_to_unity(f"SET_SPEED:0")
-                if key.char == 's':
-                    send_command_to_unity(f"SET_SPEED:0")
-                if key.char == 'd':
-                    send_command_to_unity(f"SET_STEERING:0")
-                if key.char == 'q':
-                    send_command_to_unity(f"SET_STEERING:0")
+                # if key.char == 'z':
+                #     send_command_to_unity(f"SET_SPEED:0")
+                # if key.char == 's':
+                #     send_command_to_unity(f"SET_SPEED:0")
+                # if key.char == 'd':
+                #     send_command_to_unity(f"SET_STEERING:0")
+                # if key.char == 'q':
+                #     send_command_to_unity(f"SET_STEERING:0")
 
         # Stop the listener when 'esc' is pressed
         if key == keyboard.Key.esc:
@@ -131,11 +132,15 @@ def update_key_values():
                     if key_map[key]['value'] > 1:
                         key_map[key]['value'] = 1
                     key_map[key]['increase'] = True
+                if key_map[key]['activated'] == 0:
+                    key_map[key]['value'] = key_map[key]['value'] - offset
+                    if key_map[key]['value'] < 0:
+                        key_map[key]['value'] = 0
+                    key_map[key]['increase'] = False
                     # if key_map[key]['value'] == 1.0:  # Max value when held for 1 second
                     #     send_command_to_unity(f"SET_{'SPEED' if key in ['z', 's'] else 'STEERING'}:{key_map[key]['value']:.1f}")
 
             # Periodically send commands to Unity based on key values
-            # print(key_map['z']['value'])
             if key_map['z']['activated'] == 1 and key_map['z']['value'] > 0:
                 send_command_to_unity(f"SET_SPEED:{key_map['z']['value']}")
             if key_map['s']['activated'] == 1 and key_map['s']['value'] > 0:
@@ -164,17 +169,13 @@ def update_key_values():
 
             get_infos_raycast(speed_v, next_speed, steering_v, next_steering)
 
-            if current_time - last_time >= 20:  # Check if 20 seconds have passed
+            if current_time - last_time >= 5:  # Check if 20 seconds have passed
                 last_time = current_time
                 send_command_to_unity(f"SET_RANDOM_POSITION")
                 for key, data in key_map.items():
                     for sub_key, sub_value in data.items():
                         if sub_key == 'value':
                             data[sub_key] = 0  # Update the value directly in the dictionary
-                            sub_value = 0  # Update the local variable as well (optional for printing purposes)
-                        if sub_key == 'activated':
-                            data[sub_key] = 0  # Update the activated value directly in the dictionary
-                            sub_value = 0  # Update the local variable as well (optional for printing purposes)
 
             time.sleep(0.01)  # Wait for 10ms before updating again
 

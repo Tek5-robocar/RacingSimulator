@@ -1,3 +1,5 @@
+import subprocess
+
 from unity import send_command_to_unity
 from pynput import keyboard
 import pandas as pd
@@ -186,10 +188,15 @@ def start_listener():
     with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
         listener.join()
 
+
+UNITY_BUILD_PATH = os.path.join(os.getcwd(), '..', 'unity-simulator', 'UnityBuild', 'RacingSimulator.x86_64')
+
 # Start the program
 if __name__ == "__main__":
     print("Press keys (z, q, s, d). Press 'Esc' to exit.")
-    
+    unity_process = subprocess.Popen([UNITY_BUILD_PATH])
+    time.sleep(5)
+
     # Start a background thread to periodically update key map values
     update_thread = threading.Thread(target=update_key_values, daemon=True)
     update_thread.start()
@@ -201,3 +208,7 @@ if __name__ == "__main__":
     print("\nFinal key map values:")
     for key, value in key_map.items():
         print(f"Key {key}: {value['value']:.1f}")
+
+    send_command_to_unity("END_SIMULATION")
+    if unity_process:
+        unity_process.terminate()

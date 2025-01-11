@@ -2,6 +2,7 @@ import math
 from configparser import ConfigParser
 
 import numpy as np
+import pandas as pd
 
 
 def load_config(config_path: str) -> ConfigParser:
@@ -41,20 +42,52 @@ def split_data(normalized_data: np.ndarray, config):
         len(normalized_data) * train_proportion + len(normalized_data) * test_proportion)]
     validation_data = normalized_data[math.floor(len(normalized_data) * -validation_proportion):]
 
-    sum_train = np.array([train_data[:, :3].sum(axis=1)/3, train_data[:, 3:6].sum(axis=1)/3, train_data[:, 6:9].sum(axis=1)/3, train_data[:, 10], train_data[:, 12]]).T
-    sum_target = np.array([train_data[:, 11], train_data[:, 13]]).T
+    sum_data_train = np.array(
+        [train_data[:, :4].sum(axis=1) / 4, train_data[:, 4:6].sum(axis=1) / 2, train_data[:, 6:10].sum(axis=1) / 4,
+         train_data[:, 10], train_data[:, 12]]).T
+    sum_target_train = np.array([train_data[:, 11]]).T
+    # sum_target_train = np.array([train_data[:, 11], train_data[:, 13]]).T
 
-    sum_train = np.array([train_data[:, :3].sum(axis=1) / 3, train_data[:, 3:6].sum(axis=1) / 3, train_data[:, 6:9].sum(axis=1) / 3, train_data[:, 10], train_data[:, 12]]).T
-    sum_target = np.array([train_data[:, 11], train_data[:, 13]]).T
+    sum_data_test = np.array(
+        [test_data[:, :4].sum(axis=1) / 4, test_data[:, 4:6].sum(axis=1) / 2, test_data[:, 6:10].sum(axis=1) / 4,
+         test_data[:, 10], test_data[:, 12]]).T
+    sum_target_test = np.array([test_data[:, 11]]).T
+    # sum_target_test = np.array([test_data[:, 11], test_data[:, 13]]).T
 
-    sum_train = np.array([train_data[:, :3].sum(axis=1) / 3, train_data[:, 3:6].sum(axis=1) / 3, train_data[:, 6:9].sum(axis=1) / 3,train_data[:, 10], train_data[:, 12]]).T
-    sum_target = np.array([train_data[:, 11], train_data[:, 13]]).T
+    sum_data_validation = np.array([validation_data[:, :4].sum(axis=1) / 4, validation_data[:, 4:6].sum(axis=1) / 2,
+                                    validation_data[:, 6:10].sum(axis=1) / 4, validation_data[:, 10],
+                                    validation_data[:, 12]]).T
+    sum_target_validation = np.array([validation_data[:, 11]]).T
+    # sum_target_validation = np.array([validation_data[:, 11], validation_data[:, 13]]).T
 
     return (
-        train_data[:, :12],
-        train_data[:, 12:],
-        validation_data[:, :12],
-        validation_data[:, 12:],
-        test_data[:,:12],
-        test_data[:,12:]
+        sum_data_train, sum_target_train, sum_data_validation, sum_target_validation, sum_data_test, sum_target_test
     )
+
+
+def preprocess_and_normalize(df):
+    """
+    Preprocess the DataFrame by converting all rows except the first to float,
+    and normalize all numeric columns between their two largest values.
+
+    Parameters:
+        df (pd.DataFrame): The input DataFrame.
+
+    Returns:
+        pd.DataFrame: A DataFrame with normalized numeric columns.
+    """
+    # Convert all rows except the first to float
+    df.iloc[1:] = df.iloc[1:].apply(pd.to_numeric, errors='coerce')
+
+    # Normalize numeric columns
+    normalized_df = df.copy()
+    for col in df.columns:
+        if pd.api.types.is_numeric_dtype(df[col]):
+            max_val = df[col].max()
+            min_val = df[col].min()
+            if min_val >= max_val:  # Avoid division by zero
+                print(f"Warning: Column '{col}' has identical largest values.")
+                normalized_df[col] = 0  # Set all values to 0 if normalization is invalid
+            else:
+                normalized_df[col] = (df[col] - min_val) / (max_val - min_val)
+    return normalized_df

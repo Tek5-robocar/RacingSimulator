@@ -6,11 +6,13 @@ class Network(nn.Module):
         self.model = nn.Sequential(
             nn.Linear(input_size, 64),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(64, 128),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
+            nn.ReLU(),
+            nn.Linear(128, 64),
             nn.ReLU(),
             nn.Linear(64, output_size),
             nn.Tanh()

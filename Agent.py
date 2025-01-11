@@ -12,7 +12,7 @@ class Agent:
     def __init__(self, config, device):
         torch.device(device)
         self.device = device
-        self.model = Network(3, 1).to(device)
+        self.model = Network(5, 1).to(device)
         self.criterion = nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(),
                                           lr=float(config.get('hyperparameters', 'learning_rate')))

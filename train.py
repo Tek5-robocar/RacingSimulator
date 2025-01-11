@@ -29,18 +29,18 @@ class CustomDataset(Dataset):
         inputs = inputs.numpy()
 
         # LIDAR rays augmentation (first 10 features)
-        noise = np.random.normal(0, 0.05, size=10)  # Gaussian noise
-        inputs[:10] += noise
+        noise = np.random.normal(0, 0.05, size=3)  # Gaussian noise
+        inputs[:3] += noise
 
         # Random dropout of LIDAR rays
-        dropout_mask = np.random.choice([0, 1], size=10, p=[0.1, 0.9])  # 10% dropout
-        inputs[:10] *= dropout_mask
+        dropout_mask = np.random.choice([0, 1], size=3, p=[0.1, 0.9])  # 10% dropout
+        inputs[:3] *= dropout_mask
 
         # Speed augmentation (11th feature)
-        inputs[10] *= np.random.uniform(0.9, 1.1)  # Scale speed by 90-110%
+        inputs[3] *= np.random.uniform(0.9, 1.1)  # Scale speed by 90-110%
 
         # Steering augmentation (12th feature)
-        inputs[11] += np.random.normal(0, 0.02)  # Add small noise to steering
+        inputs[4] += np.random.normal(0, 0.02)  # Add small noise to steering
 
         # Convert back to tensor
         return torch.tensor(inputs, dtype=torch.float32)
@@ -50,7 +50,7 @@ def main():
     data = pd.read_csv(config.get('DEFAULT', 'csv_path'))
     normalized_data = normalize(data.to_numpy(), config)
     train_data, train_target, validation_data, validation_target, test_data, test_target = split_data(normalized_data, config)
-    return
+
     # Enable augmentation only for the training dataset
     train_dataset = CustomDataset(train_data, train_target, augment=True)
     val_dataset = CustomDataset(validation_data, validation_target, augment=False)

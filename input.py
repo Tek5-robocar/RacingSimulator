@@ -19,6 +19,8 @@ key_map = {
 # activated 2 // pressed and not usable
 
 
+offset = 0.001
+
 csv_file = "lidar_data.csv"
 columns = [f"lidar_{i}" for i in range(1, 11)]  # Creating column names like lidar_1, lidar_2, ..., lidar_11
 columns.append("speed")
@@ -39,6 +41,7 @@ def get_value_for_key(key):
     return (key_map[key]['opposite'], -key_map[key_map[key]['opposite']]['value'])
 
 def get_infos_raycast(speed, expected_speed, steering, expected_steering):
+    print(speed)
     global it
     x = send_command_to_unity('GET_INFOS_RAYCAST')
     x_splitted = x.split(':')
@@ -49,10 +52,10 @@ def get_infos_raycast(speed, expected_speed, steering, expected_steering):
     file_exists = os.path.exists(csv_file)
     file_empty = os.path.getsize(csv_file) == 0 if file_exists else True
     try:
-        x.append(str(speed)[:3])
-        x.append(str(expected_speed)[:3])
-        x.append(str(steering)[:3])
-        x.append(str(expected_steering)[:3])
+        x.append(str("{:.3f}".format(speed)))
+        x.append(str("{:.3f}".format(expected_speed)))
+        x.append(str("{:.3f}".format(steering)))
+        x.append(str("{:.3f}".format(expected_steering)))
         # print(x)
         lidar_data = pd.DataFrame([x], columns=columns)
         if file_empty:
@@ -124,7 +127,9 @@ def update_key_values():
             for key in key_map:
                 if key_map[key]['activated'] == 1:
                     # Update the key's value by increasing it by 0.1 every 10 ms
-                    key_map[key]['value'] = min(1.0, key_map[key]['value'] + 0.1)
+                    key_map[key]['value'] = key_map[key]['value'] + offset
+                    if key_map[key]['value'] > 1:
+                        key_map[key]['value'] = 1
                     key_map[key]['increase'] = True
                     # if key_map[key]['value'] == 1.0:  # Max value when held for 1 second
                     #     send_command_to_unity(f"SET_{'SPEED' if key in ['z', 's'] else 'STEERING'}:{key_map[key]['value']:.1f}")
@@ -147,15 +152,15 @@ def update_key_values():
             next_steering = steering_v
 
             if key_map[speed_input]['increase'] == True and speed_v > 0 and speed_v < 1:
-                next_speed+=0.1
+                next_speed+=offset
             if key_map[speed_input]['increase'] == True and speed_v < 0 and speed_v > -1:
-                next_speed-=0.1
+                next_speed-=offset
 
 
             if key_map[steering_input]['increase'] == True and steering_v > 0 and steering_v < 1:
-                next_steering+=0.1
+                next_steering+=offset
             elif key_map[steering_input]['increase'] == True and steering_v < 0 and steering_v > -1:
-                next_steering-=0.1
+                next_steering-=offset
 
             get_infos_raycast(speed_v, next_speed, steering_v, next_steering)
 

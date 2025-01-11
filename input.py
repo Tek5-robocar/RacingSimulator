@@ -46,7 +46,8 @@ def get_infos_raycast(speed, expected_speed, steering, expected_steering):
     if x_splitted[0] == 'KO':
         return
     x = [elem[:3] for elem in x_splitted[2:]]
-    # print(x)
+    file_exists = os.path.exists(csv_file)
+    file_empty = os.path.getsize(csv_file) == 0 if file_exists else True
     try:
         x.append(str(speed)[:3])
         x.append(str(expected_speed)[:3])
@@ -54,7 +55,7 @@ def get_infos_raycast(speed, expected_speed, steering, expected_steering):
         x.append(str(expected_steering)[:3])
         # print(x)
         lidar_data = pd.DataFrame([x], columns=columns)
-        if not os.path.exists(csv_file) and it == 0:
+        if file_empty:
             lidar_data.to_csv(csv_file, mode='w', header=True, index=False)  # Write with header
         else:
             lidar_data.to_csv(csv_file, mode='a', header=False, index=False)  # Append without header

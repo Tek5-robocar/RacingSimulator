@@ -19,7 +19,7 @@ key_map = {
 # activated 2 // pressed and not usable
 
 
-offset = 0.01
+offset = 0.05
 
 csv_file = "lidar_data.csv"
 columns = [f"ray_cast_{i}" for i in range(1, 11)]  # Creating column names like lidar_1, lidar_2, ..., lidar_11
@@ -146,7 +146,7 @@ def update_key_values():
 
             if key_map['d']['activated'] != 2 and key_map['d']['value'] != 0:
                 send_command_to_unity(f"SET_STEERING:{key_map['d']['value']}")
-            if key_map['q']['activated'] != 2 and key_map['q']['value'] != 0:
+            elif key_map['q']['activated'] != 2 and key_map['q']['value'] != 0:
                 send_command_to_unity(f"SET_STEERING:{-key_map['q']['value']}")
             else:
                 send_command_to_unity(f"SET_STEERING:0")

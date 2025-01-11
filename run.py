@@ -8,14 +8,11 @@ from Agent import Agent
 from unity import send_command_to_unity
 from utils import load_config
 
-UNITY_BUILD_PATH = os.path.join(os.getcwd(), '..', 'unity-simulator', 'UnityBuild', 'RacingSimulator.x86_64')
-
-
 def loop(agent: Agent):
-    for i in range(100):
+    for i in range(300):
+        print('--------')
         result = send_command_to_unity("GET_INFOS_RAYCAST;GET_SPEED;GET_STEERING")
         result_splitted = result.split(';')
-        print(result_splitted)
         if len(result_splitted) != 3:
             continue
         raycast = result_splitted[0]
@@ -24,7 +21,6 @@ def loop(agent: Agent):
         splitted_raycast = raycast.split(':')
         splitted_speed = speed.split(':')
         splitted_steering = steering.split(':')
-        print(splitted_raycast, splitted_speed, splitted_steering)
         if len(splitted_raycast) != 12 or splitted_raycast[0] != 'OK' or splitted_raycast[
             1] != 'GET_INFOS_RAYCAST' or len(splitted_speed) != 3 or len(splitted_steering) != 3 or splitted_speed[
             1] != 'GET_SPEED' or splitted_steering[1] != 'GET_STEERING':
@@ -32,22 +28,27 @@ def loop(agent: Agent):
         float_arr = [float(elem) for elem in splitted_raycast[2:]]
         float_arr.append(float(splitted_speed[2]))
         float_arr.append(float(splitted_steering[2]))
+        float_arr = np.array([(float_arr[i] - agent.extremum[i][0]) / (agent.extremum[i][1] - agent.extremum[i][0]) for i in range(len(float_arr))])
+        float_arr = np.array([sum(float_arr[:4]), sum(float_arr[4:6]), sum(float_arr[6:10]), float_arr[10], float_arr[11]])
         print(float_arr)
         prediction = agent.predict(np.array(float_arr))
-        send_command_to_unity(f"SET_SPEED:{prediction[0]};SET_STEERING:{prediction[1]}")
         print(prediction)
+        send_command_to_unity(f"SET_SPEED:{0.3};SET_STEERING:{prediction[0]}")
+        print('--------')
 
 
 def main():
-    unity_process = subprocess.Popen([UNITY_BUILD_PATH])
+    unity_process = subprocess.Popen([config.get('unity', 'env_path')])
     time.sleep(5)
 
     agent = Agent(config, 'cuda')
 
     try:
-        loop(agent)
-    except:
-        pass
+        for _ in range(5):
+            loop(agent)
+            send_command_to_unity("SET_RANDOM_POSITION")
+    except Exception as e:
+        print(e)
 
     send_command_to_unity("END_SIMULATION")
     if unity_process:

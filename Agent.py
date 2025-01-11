@@ -10,6 +10,7 @@ from Network import Network
 
 class Agent:
     def __init__(self, config, device):
+        self.extremum = None
         torch.device(device)
         self.device = device
         self.model = Network(5, 1).to(device)
@@ -21,10 +22,11 @@ class Agent:
 
         self.load()
 
-    def save(self):
+    def save(self, extremum: [()]):
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
+            'extremum': extremum
         }, self.save_path)
         print(f"Model saved to {self.save_path}")
 
@@ -33,6 +35,7 @@ class Agent:
             checkpoint = torch.load(self.load_path, map_location=self.device, weights_only=False)
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            self.extremum = checkpoint['extremum']
             print(f"Model loaded from {self.load_path}")
         else:
             print(f"No checkpoint found at {self.load_path}")
@@ -63,8 +66,12 @@ class Agent:
         # Generate visualizations
         self.visualize_results(all_targets, all_predictions)
 
-    def train(self, train_loader, val_loader, epochs):
+    def train(self, train_loader, val_loader, epochs, patience):
+        best_val_loss = float('inf')  # Initialize best validation loss
+        patience_counter = 0  # Counter to track epochs without improvement
+
         for epoch in range(epochs):
+            # Training phase
             self.model.train()
             running_loss = 0.0
             for batch_inputs, batch_targets in train_loader:
@@ -75,7 +82,7 @@ class Agent:
                 self.optimizer.step()
                 running_loss += loss.item()
 
-            # Validation
+            # Validation phase
             self.model.eval()
             val_loss = 0.0
             with torch.no_grad():
@@ -83,8 +90,23 @@ class Agent:
                     val_outputs = self.model(val_inputs.to(self.device))
                     val_loss += self.criterion(val_outputs, val_targets.to(self.device)).item()
 
-            print(
-                f"Epoch {epoch + 1}/{epochs}, Train Loss: {running_loss / len(train_loader)}, Val Loss: {val_loss / len(val_loader)}")
+            # Average losses
+            train_loss = running_loss / len(train_loader)
+            val_loss /= len(val_loader)
+
+            # Check for improvement
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                patience_counter = 0  # Reset patience counter
+            else:
+                patience_counter += 1  # Increment patience counter
+
+            print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+
+            # Early stopping condition
+            if patience_counter >= patience:
+                print(f"Early stopping triggered after {epoch + 1} epochs.")
+                break
 
     def predict(self, input_data):
         self.model.eval()

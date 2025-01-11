@@ -15,7 +15,6 @@ class Network(nn.Module):
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Linear(64, output_size),
-            nn.Tanh()
         )
 
     def forward(self, x):

@@ -1,6 +1,8 @@
 ﻿import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Dataset
+
+import utils
 from Agent import Agent
 from utils import split_data, load_config, normalize
 import numpy as np
@@ -47,9 +49,11 @@ class CustomDataset(Dataset):
 
 
 def main():
-    data = pd.read_csv(config.get('DEFAULT', 'csv_path'))
-    normalized_data = normalize(data.to_numpy(), config)
-    train_data, train_target, validation_data, validation_target, test_data, test_target = split_data(normalized_data, config)
+    data = pd.read_csv(config.get('DEFAULT', 'csv_path'), skiprows=1).apply(pd.to_numeric)
+    extremum = [(data[column].min(), data[column].max()) for column in data]
+    normalized_data = utils.preprocess_and_normalize(data)
+
+    train_data, train_target, validation_data, validation_target, test_data, test_target = split_data(normalized_data.to_numpy(), config)
 
     # Enable augmentation only for the training dataset
     train_dataset = CustomDataset(train_data, train_target, augment=True)
@@ -64,8 +68,8 @@ def main():
 
     agent = Agent(config, 'cuda')
 
-    agent.train(train_loader, val_loader, int(config.get('DEFAULT', 'epoch')))
-    agent.save()
+    agent.train(train_loader, val_loader, int(config.get('DEFAULT', 'epoch')), int(config.get('hyperparameters', 'patience')))
+    agent.save(extremum)
 
     agent.eval(test_loader)
 

@@ -76,10 +76,6 @@ def preprocess_and_normalize(df):
     Returns:
         pd.DataFrame: A DataFrame with normalized numeric columns.
     """
-    # Convert all rows except the first to float
-    df.iloc[1:] = df.iloc[1:].apply(pd.to_numeric, errors='coerce')
-
-    # Normalize numeric columns
     normalized_df = df.copy()
     for col in df.columns:
         if pd.api.types.is_numeric_dtype(df[col]):

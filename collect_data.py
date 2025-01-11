@@ -38,10 +38,16 @@ it = 0
 def get_value_for_key(key):
     if key_map[key]['activated'] == 1:
         return (key, key_map[key]['value'])
-    return (key_map[key]['opposite'], -key_map[key_map[key]['opposite']]['value'])
+    elif key_map[key_map[key]['opposite']]['activated'] == 1:
+        return (key_map[key]['opposite'], -key_map[key_map[key]['opposite']]['value'])
+    if key_map[key]['value'] != 0:
+        return (key, key_map[key]['value'])
+    elif key_map[key_map[key]['opposite']]['value'] != 0:
+        return (key_map[key]['opposite'], -key_map[key_map[key]['opposite']]['value'])
+    else:
+        return (key, key_map[key]['value'])
 
 def get_infos_raycast(speed, expected_speed, steering, expected_steering):
-    # print(speed)
     global it
     x = send_command_to_unity('GET_INFOS_RAYCAST')
     x_splitted = x.split(':')

@@ -137,14 +137,19 @@ def update_key_values():
                     #     send_command_to_unity(f"SET_{'SPEED' if key in ['z', 's'] else 'STEERING'}:{key_map[key]['value']:.1f}")
 
             # Periodically send commands to Unity based on key values
-            if key_map['z']['activated'] == 1 and key_map['z']['value'] > 0:
+            if (key_map['z']['activated'] != 2 and key_map['z']['value'] != 0):
                 send_command_to_unity(f"SET_SPEED:{key_map['z']['value']}")
-            if key_map['s']['activated'] == 1 and key_map['s']['value'] > 0:
+            elif key_map['s']['activated'] != 2 and key_map['s']['value'] != 0:
                 send_command_to_unity(f"SET_SPEED:{-key_map['s']['value']}")
-            if key_map['d']['activated'] == 1 and key_map['d']['value'] > 0:
+            else:
+                send_command_to_unity(f"SET_SPEED:0")
+
+            if key_map['d']['activated'] != 2 and key_map['d']['value'] != 0:
                 send_command_to_unity(f"SET_STEERING:{key_map['d']['value']}")
-            if key_map['q']['activated'] == 1 and key_map['q']['value'] > 0:
+            if key_map['q']['activated'] != 2 and key_map['q']['value'] != 0:
                 send_command_to_unity(f"SET_STEERING:{-key_map['q']['value']}")
+            else:
+                send_command_to_unity(f"SET_STEERING:0")
 
             speed_input, speed_v = get_value_for_key('z')
             steering_input, steering_v = get_value_for_key('s')
@@ -156,8 +161,6 @@ def update_key_values():
                 next_speed+=offset
             elif key_map[speed_input]['increase'] == True and speed_v < 0 and speed_v > -1:
                 next_speed-=offset * 2
-
-
             if key_map[steering_input]['increase'] == True and steering_v > 0 and steering_v < 1:
                 next_steering+=offset
             elif key_map[steering_input]['increase'] == True and steering_v < 0 and steering_v > -1:
@@ -165,7 +168,7 @@ def update_key_values():
 
             get_infos_raycast(speed_v, next_speed, steering_v, next_steering)
 
-            if current_time - last_time >= 5:  # Check if 20 seconds have passed
+            if current_time - last_time >= 20:  # Check if 20 seconds have passed
                 last_time = current_time
                 send_command_to_unity(f"SET_RANDOM_POSITION")
                 for key, data in key_map.items():

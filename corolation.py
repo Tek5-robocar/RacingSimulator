@@ -2,21 +2,42 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# Load dataset
-data = pd.read_csv('lidar_data1.csv')
-data['left-right-diff'] = data.iloc[:, 0] + data.iloc[:, 9]
-# Correlation matrix
-corr_matrix = data.corr()
+from utils import load_config
 
-# Visualize correlations
-plt.figure(figsize=(13, 8))
-sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
-plt.title('Correlation Matrix')
-plt.show()
 
-# Scatter plot for a specific ray
-sns.scatterplot(x=data['steering'], y=data['ray_cast_1'])
-plt.title('Steering vs Ray Cast 1')
-plt.xlabel('Steering')
-plt.ylabel('Ray Cast 1')
-plt.show()
+def direction_to_numeric(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Takes in a pandas Dataframe filled with random forest ray cast data
+    Replace the value of the steering column as we need numeric values to compute the correlations
+    """
+    mapping = {
+        'center': 0,
+        'left': -1,
+        'diagonal left': -0.5,
+        'right': 1,
+        'diagonal right': 0.5
+    }
+    data['steering'] = data['steering'].replace(mapping)
+    return data
+
+
+def show_correlation(data: pd.DataFrame) -> None:
+    """
+    Computes and display the correlation matrix
+    """
+    corr_matrix = data.corr()
+    plt.figure(figsize=(13, 8))
+    sns.heatmap(corr_matrix, annot=True, cmap='coolwarm')
+    plt.title('Correlation Matrix')
+    plt.show()
+
+
+def main():
+    config = load_config('config.ini')
+    data = pd.read_csv(config.get('DEFAULT', 'csv_path'))
+    data = direction_to_numeric(data)
+    show_correlation(data)
+
+
+if __name__ == '__main__':
+    main()

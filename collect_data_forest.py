@@ -7,6 +7,7 @@ import time
 import threading
 import os
 
+from utils import load_config
 
 # Dictionary to store the values and activation state of keys pressed
 key_map = {
@@ -22,8 +23,9 @@ key_map = {
 
 
 offset = 0.05
+config = load_config('config.ini')
 
-csv_file = "lidar_data_forest.csv"
+csv_file = config.get('unity', 'csv_path')
 columns = [f"ray_cast_{i}" for i in range(1, 11)]  # Creating column names like lidar_1, lidar_2, ..., lidar_11
 columns.append("steering")
 
@@ -193,7 +195,7 @@ def start_listener():
         listener.join()
 
 
-UNITY_BUILD_PATH = os.path.join(os.getcwd(), '..', 'unity-simulator', 'UnityBuild2', 'RacingSimulator.x86_64')
+UNITY_BUILD_PATH = config.get('unity', 'env_path')
 
 # Start the program
 if __name__ == "__main__":

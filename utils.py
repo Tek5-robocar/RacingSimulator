@@ -30,6 +30,7 @@ def normalize(numpy_csv: np.ndarray, config) -> np.ndarray:
 
 
 def split_data(normalized_data: np.ndarray, config):
+    print(normalized_data.shape)
     train_proportion = float(config.get('DEFAULT', 'train_proportion'))
     test_proportion = float(config.get('DEFAULT', 'test_proportion'))
     validation_proportion = float(config.get('DEFAULT', 'validation_proportion'))
@@ -43,25 +44,27 @@ def split_data(normalized_data: np.ndarray, config):
     validation_data = normalized_data[math.floor(len(normalized_data) * -validation_proportion):]
 
     sum_data_train = np.array(
-        [train_data[:, :4].sum(axis=1) / 4, train_data[:, 4:6].sum(axis=1) / 2, train_data[:, 6:10].sum(axis=1) / 4,
-         train_data[:, 10], train_data[:, 12]]).T
+        [train_data[:, :4].sum(axis=1) / 4, train_data[:, 4:6].sum(axis=1) / 2, train_data[:, 6:10].sum(axis=1) / 4]).T
+        # [train_data[:, :4].sum(axis=1) / 4, train_data[:, 4:6].sum(axis=1) / 2, train_data[:, 6:10].sum(axis=1) / 4, train_data[:, 10], train_data[:, 12]]).T
     sum_target_train = np.array([train_data[:, 11]]).T
     # sum_target_train = np.array([train_data[:, 11], train_data[:, 13]]).T
 
     sum_data_test = np.array(
-        [test_data[:, :4].sum(axis=1) / 4, test_data[:, 4:6].sum(axis=1) / 2, test_data[:, 6:10].sum(axis=1) / 4,
-         test_data[:, 10], test_data[:, 12]]).T
+        [test_data[:, :4].sum(axis=1) / 4, test_data[:, 4:6].sum(axis=1) / 2, test_data[:, 6:10].sum(axis=1) / 4]).T
+        # [test_data[:, :4].sum(axis=1) / 4, test_data[:, 4:6].sum(axis=1) / 2, test_data[:, 6:10].sum(axis=1) / 4, test_data[:, 10], test_data[:, 12]]).T
     sum_target_test = np.array([test_data[:, 11]]).T
     # sum_target_test = np.array([test_data[:, 11], test_data[:, 13]]).T
 
     sum_data_validation = np.array([validation_data[:, :4].sum(axis=1) / 4, validation_data[:, 4:6].sum(axis=1) / 2,
-                                    validation_data[:, 6:10].sum(axis=1) / 4, validation_data[:, 10],
-                                    validation_data[:, 12]]).T
+                                    validation_data[:, 6:10].sum(axis=1) / 4]).T
+    # sum_data_validation = np.array([validation_data[:, :4].sum(axis=1) / 4, validation_data[:, 4:6].sum(axis=1) / 2,
+    #                                 validation_data[:, 6:10].sum(axis=1) / 4, validation_data[:, 10],
+    #                                 validation_data[:, 12]]).T
     sum_target_validation = np.array([validation_data[:, 11]]).T
     # sum_target_validation = np.array([validation_data[:, 11], validation_data[:, 13]]).T
-
     return (
-        sum_data_train, sum_target_train, sum_data_validation, sum_target_validation, sum_data_test, sum_target_test
+        train_data[:, list(range(10)) + [train_data[:, 0] + train_data[:, 9]]], np.array([train_data[:, 13]]).T, validation_data[:, list(range(10)) + [validation_data[:, 0] + validation_data[:, 9]]], np.array([validation_data[:, 13]]).T, test_data[:, list(range(10)) + [test_data[:, 0] + test_data[:, 9]]], np.array([test_data[:, 13]]).T
+        # sum_data_train, sum_target_train, sum_data_validation, sum_target_validation, sum_data_test, sum_target_test
     )
 
 

@@ -29,11 +29,14 @@ def loop(agent: Agent):
         float_arr.append(float(splitted_speed[2]))
         float_arr.append(float(splitted_steering[2]))
         float_arr = np.array([(float_arr[i] - agent.extremum[i][0]) / (agent.extremum[i][1] - agent.extremum[i][0]) for i in range(len(float_arr))])
-        float_arr = np.array([sum(float_arr[:4]), sum(float_arr[4:6]), sum(float_arr[6:10]), float_arr[10], float_arr[11]])
+        # float_arr = np.array([sum(float_arr[:4])/4, sum(float_arr[4:6])/2, sum(float_arr[6:10])/4, float_arr[10]])
+        # float_arr = np.array([sum(float_arr[:4])/4, sum(float_arr[4:6])/2, sum(float_arr[6:10])/4, float_arr[10], float_arr[11]])
+        print(float_arr.shape)
+        float_arr = float_arr[list(range(10)) + [11]]
         print(float_arr)
         prediction = agent.predict(np.array(float_arr))
-        print(prediction)
-        send_command_to_unity(f"SET_SPEED:{0.3};SET_STEERING:{prediction[0]}")
+        print(prediction[0])
+        send_command_to_unity(f"SET_SPEED:{0.5};SET_STEERING:{prediction[0]}")
         print('--------')
 
 

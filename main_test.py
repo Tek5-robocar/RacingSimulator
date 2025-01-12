@@ -4,15 +4,15 @@ import subprocess
 from time import sleep
 
 from unity import send_command_to_unity
-
-UNITY_BUILD_PATH = os.path.join(os.getcwd(), 'UnityBuild', 'RacingSimulator.x86_64')
+from utils import load_config
 
 
 class TestUnityCommands(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Start the Unity simulation before tests."""
-        cls.unity_process = subprocess.Popen([UNITY_BUILD_PATH])
+        config = load_config('config.ini')
+        cls.unity_process = subprocess.Popen([config.get('unity', 'env_path')])
         sleep(5)
 
     @classmethod
@@ -72,12 +72,16 @@ class TestUnityCommands(unittest.TestCase):
 
     def test_set_high_speed_steering_get_infos_raycast(self):
         response = send_command_to_unity("SET_SPEED:1.71;SET_STEERING:0.3;GET_INFOS_RAYCAST")
-        self.assertEqual(response, "KO:SET_SPEED;OK:SET_STEERING;OK:GET_INFOS_RAYCAST:174.00:185.00:227.00:163.00:164.00:160.00:168.00:227.00:185.00:174.00")
+        self.assertEqual(response, "KO:SET_SPEED;OK:SET_STEERING;OK:GET_INFOS_RAYCAST:183.00:169.00:162.00:161.00:166.00:165.00:156.00:153.00:156.00:170.00")
         send_command_to_unity("SET_STEERING:0")
 
     def test_get_speed(self):
         response = send_command_to_unity("GET_SPEED")
         self.assertEqual(response, "OK:GET_SPEED:0.00")
+
+    def test_get_angle_to_center_line(self):
+        response = send_command_to_unity("GET_ANGLE_TO_CENTER_LINE")
+        self.assertEqual(response, "OK:GET_ANGLE_TO_CENTER_LINE:0.00")
 
     def test_get_steering(self):
         response = send_command_to_unity("GET_STEERING")
@@ -85,7 +89,7 @@ class TestUnityCommands(unittest.TestCase):
 
     def test_get_infos_raycast(self):
         response = send_command_to_unity("GET_INFOS_RAYCAST")
-        self.assertEqual(response,"OK:GET_INFOS_RAYCAST:174.00:185.00:227.00:163.00:164.00:160.00:168.00:227.00:185.00:174.00")
+        self.assertEqual(response,"OK:GET_INFOS_RAYCAST:183.00:169.00:162.00:161.00:166.00:165.00:156.00:153.00:156.00:170.00")
 
     def test_get_position(self):
         response = send_command_to_unity("GET_POSITION")

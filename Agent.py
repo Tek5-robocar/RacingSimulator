@@ -13,7 +13,7 @@ class Agent:
         self.extremum = None
         torch.device(device)
         self.device = device
-        self.model = Network(5, 1).to(device)
+        self.model = Network(11, 1).to(device)
         self.criterion = nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(),
                                           lr=float(config.get('hyperparameters', 'learning_rate')))
@@ -118,9 +118,16 @@ class Agent:
         return predictions.cpu().numpy()
 
     def calculate_metrics(self, targets, predictions):
+        """Measures average absolute difference between predictions and true values"""
         mse = mean_squared_error(targets, predictions)
+
+        """Same as MSE but interpretable in the same units as the target variable"""
         rmse = np.sqrt(mse)
+
+        """Penalizes larger errors more than smaller ones, making it sensitive to outliers"""
         mae = mean_absolute_error(targets, predictions)
+
+        """Measures the proportion of variance explained by the model, best fit close to 1"""
         r2 = r2_score(targets, predictions)
 
         print(f"Mean Absolute Error (MAE): {mae}")
@@ -134,11 +141,15 @@ class Agent:
         residuals = targets - predictions
 
         # Create a grid of subplots (4 rows, num_outputs columns)
-        fig, axes = plt.subplots(4, num_outputs, figsize=(5 * num_outputs, 20))
+        fig, axes = plt.subplots(3, num_outputs, figsize=(5 * num_outputs, 20))
         axes = axes.flatten()
 
         for i in range(num_outputs):
-            # Scatter Plot
+            """
+            Scatter Plot
+            Plot predicted vs. actual values for each output
+            Ideal results should align along the y=x line
+            """
             ax = axes[i]
             ax.scatter(targets[:, i], predictions[:, i], alpha=0.7)
             ax.plot([targets[:, i].min(), targets[:, i].max()],
@@ -148,7 +159,11 @@ class Agent:
             ax.set_ylabel('Predicted Values')
             ax.grid()
 
-            # Residual Analysis
+            """
+            Residual Analysis
+            Plot residuals (true - prediction) for each output against the predicted or actual values
+            Residuals should be randomly distributed around 0 without patterns
+            """
             ax = axes[num_outputs + i]
             ax.scatter(predictions[:, i], residuals[:, i], alpha=0.7)
             ax.axhline(0, color='r', linestyle='--')
@@ -157,23 +172,15 @@ class Agent:
             ax.set_ylabel('Residuals')
             ax.grid()
 
-            # Histogram of Residuals
+            """
+            Histogram of Residuals
+            Check if residuals are normally distributed, which indicates a well-fitted model
+            """
             ax = axes[2 * num_outputs + i]
             ax.hist(residuals[:, i], bins=30, alpha=0.7)
             ax.set_title(f'Residual Histogram for Output {i + 1}')
             ax.set_xlabel('Residual')
             ax.set_ylabel('Frequency')
-            ax.grid()
-
-        # Error Heatmap (if applicable)
-        if num_outputs == 2:  # Assuming outputs are spatial
-            errors = np.linalg.norm(targets - predictions, axis=1)
-            ax = axes[3 * num_outputs]
-            scatter = ax.scatter(targets[:, 0], targets[:, 1], c=errors, cmap='viridis', alpha=0.7)
-            fig.colorbar(scatter, ax=ax, label='Error Magnitude')
-            ax.set_title('Error Heatmap')
-            ax.set_xlabel('Output 1')
-            ax.set_ylabel('Output 2')
             ax.grid()
 
         # Adjust layout

@@ -23,7 +23,7 @@ key_map = {
 
 offset = 0.05
 
-csv_file = "lidar_data.csv"
+csv_file = "lidar_data1.csv"
 columns = [f"ray_cast_{i}" for i in range(1, 11)]  # Creating column names like lidar_1, lidar_2, ..., lidar_11
 columns.append("speed")
 columns.append("expected_speed")
@@ -52,6 +52,7 @@ def get_value_for_key(key):
 def get_infos_raycast(speed, expected_speed, steering, expected_steering):
     global it
     x = send_command_to_unity('GET_INFOS_RAYCAST')
+
     x_splitted = x.split(':')
     # print(x_splitted)
     if x_splitted[0] == 'KO':
@@ -60,11 +61,11 @@ def get_infos_raycast(speed, expected_speed, steering, expected_steering):
     file_exists = os.path.exists(csv_file)
     file_empty = os.path.getsize(csv_file) == 0 if file_exists else True
     try:
+        print(speed, expected_speed, steering, expected_steering)
         x.append(str("{:.3f}".format(speed)))
         x.append(str("{:.3f}".format(expected_speed)))
         x.append(str("{:.3f}".format(steering)))
         x.append(str("{:.3f}".format(expected_steering)))
-        # print(x)
         lidar_data = pd.DataFrame([x], columns=columns)
         if file_empty:
             lidar_data.to_csv(csv_file, mode='w', header=True, index=False)  # Write with header
@@ -168,7 +169,8 @@ def update_key_values():
             elif key_map[steering_input]['increase'] == True and steering_v < 0 and steering_v > -1:
                 next_steering-=offset * 2
 
-            get_infos_raycast(speed_v, next_speed, steering_v, next_steering)
+            # if speed_v != next_speed or steering_v != next_steering:
+            get_infos_raycast(key_map['z']['value'], key_map['s']['value'], key_map['q']['value'], key_map['d']['value'])
 
             if current_time - last_time >= 20:  # Check if 20 seconds have passed
                 last_time = current_time
@@ -177,6 +179,7 @@ def update_key_values():
                     for sub_key, sub_value in data.items():
                         if sub_key == 'value':
                             data[sub_key] = 0  # Update the value directly in the dictionary
+                time.sleep(1)
 
             time.sleep(0.01)  # Wait for 10ms before updating again
 
@@ -189,7 +192,7 @@ def start_listener():
         listener.join()
 
 
-UNITY_BUILD_PATH = os.path.join(os.getcwd(), '..', 'unity-simulator', 'UnityBuild', 'RacingSimulator.x86_64')
+UNITY_BUILD_PATH = os.path.join(os.getcwd(), '..', 'unity-simulator', 'UnityBuild2', 'RacingSimulator.x86_64')
 
 # Start the program
 if __name__ == "__main__":

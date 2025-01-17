@@ -48,14 +48,14 @@ def loop(rf_model):
     for i in range(1000):
         float_arr = get_ray_cast(max_value, min_value)
         prediction = rf_model.predict(np.array([float_arr]))
-        send_command_to_unity(f"SET_SPEED:{0.5};SET_STEERING:{get_numeric_steering(prediction)}")
+        send_command_to_unity(f"SET_SPEED:{0.7};SET_STEERING:{get_numeric_steering(prediction)}")
 
 
 def main():
     unity_process = subprocess.Popen([config.get('unity', 'env_path')])
     time.sleep(5)
 
-    with open('random_forest_model.pkl', 'rb') as f:
+    with open('random_forest_model2.pkl', 'rb') as f:
         rf_model = pickle.load(f)
     try:
         for _ in range(5):

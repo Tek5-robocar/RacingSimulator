@@ -55,7 +55,7 @@ def main():
     unity_process = subprocess.Popen([config.get('unity', 'env_path')])
     time.sleep(5)
 
-    with open('random_forest_model2.pkl', 'rb') as f:
+    with open('random_forest_model3.pkl', 'rb') as f:
         rf_model = pickle.load(f)
     try:
         for _ in range(5):

@@ -1,6 +1,5 @@
 import subprocess
 
-from unity import send_command_to_unity
 from pynput import keyboard
 import pandas as pd
 import time

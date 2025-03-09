@@ -1,8 +1,10 @@
+import os
 import socket
 import subprocess
 import threading
 import time
 
+import pandas as pd
 from pynput import keyboard
 
 from utils import load_config
@@ -11,12 +13,11 @@ from utils import load_config
 def send_command_to_unity(client, command: str):
     """Send a command to the Unity server."""
     print(f'sending: {command}')
-    # time.sleep(0.1)
     sent = client.send(bytes(command + ";", 'utf-8'))
     print(sent)
     recv = client.recv(1024)
     print(recv)
-    return recv
+    return str(recv, 'utf-8')
 
 
 def get_value_for_key(key):
@@ -116,33 +117,37 @@ def update_key_values():
 def get_infos_raycast(client, steering_left, steering_right):
     global it
     x = send_command_to_unity(client, 'GET_INFOS_RAYCAST')
+    x = x.split(';')[0]
+    print("x:")
     print(x)
-    # x_splitted = x.split(':')
-    # if x_splitted[0] == 'KO':
-    #     return
-    # x = [elem[:3] for elem in x_splitted[2:]]
-    # file_exists = os.path.exists(csv_file)
-    # file_empty = os.path.getsize(csv_file) == 0 if file_exists else True
-    # try:
-    #     if steering_left > 0.75:
-    #         x.append('left')
-    #     elif steering_left > 0.25:
-    #         x.append('diagonal left')
-    #     elif steering_right > 0.75:
-    #         x.append('right')
-    #     elif steering_right > 0.25:
-    #         x.append('diagonal right')
-    #     else:
-    #         x.append('center')
-    #     lidar_data = pd.DataFrame([x], columns=columns)
-    #     if file_empty:
-    #         lidar_data.to_csv(csv_file, mode='w', header=True, index=False)  # Write with header
-    #     else:
-    #         lidar_data.to_csv(csv_file, mode='a', header=False, index=False)  # Append without header
-    #
-    #     it += 1
-    # except Exception as e:
-    #     os.write(2, f"Error writing to CSV: {str(e)}\n".encode())
+    x_splitted = x.split(':')
+    print('x splitted:')
+    print(x_splitted)
+    if x_splitted[0] == 'KO':
+        return
+    x = [elem[:3] for elem in x_splitted[2:]]
+    file_exists = os.path.exists(csv_file)
+    file_empty = os.path.getsize(csv_file) == 0 if file_exists else True
+    try:
+        if steering_left > 0.75:
+            x.append('left')
+        elif steering_left > 0.25:
+            x.append('diagonal left')
+        elif steering_right > 0.75:
+            x.append('right')
+        elif steering_right > 0.25:
+            x.append('diagonal right')
+        else:
+            x.append('center')
+        lidar_data = pd.DataFrame([x], columns=columns)
+        if file_empty:
+            lidar_data.to_csv(csv_file, mode='w', header=True, index=False)  # Write with header
+        else:
+            lidar_data.to_csv(csv_file, mode='a', header=False, index=False)  # Append without header
+
+        it += 1
+    except Exception as e:
+        os.write(2, f"Error writing to CSV: {str(e)}\n".encode())
 
 
 def on_press(key):
@@ -188,16 +193,16 @@ def start_listener():
 
 
 def main():
-    # unity_process = subprocess.Popen([config.get('unity', 'env_path')])
-    # time.sleep(10)
+    unity_process = subprocess.Popen([config.get('unity', 'env_path')])
+    time.sleep(10)
 
     update_thread = threading.Thread(target=update_key_values, daemon=True)
     update_thread.start()
 
     start_listener()
 
-    # if unity_process:
-    #     unity_process.terminate()
+    if unity_process:
+        unity_process.terminate()
 
 
 if __name__ == '__main__':
@@ -212,6 +217,10 @@ if __name__ == '__main__':
     press_times = {}
     offset = 0.05
     HOST = '0.0.0.0'  # Server IP
-    PORT = 8080  # Server Port
+    PORT = 8085  # Server Port
+    csv_file = config.get('DEFAULT', 'csv_path')
+    columns = [f"ray_cast_{i}" for i in range(1, 11)]  # Creating column names like lidar_1, lidar_2, ..., lidar_11
+    columns.append("steering")
+    it = 0
 
     main()

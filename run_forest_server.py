@@ -1,9 +1,18 @@
 import pickle
+import socket
 import subprocess
 import time
 import numpy as np
 
 from utils import load_config
+
+
+def send_command_to_unity(client, command: str):
+    """Send a command to the Unity server."""
+    print(f'sending: {command}')
+    sent = client.send(bytes(command + ";", 'utf-8'))
+    recv = client.recv(1024)
+    return str(recv, 'utf-8')
 
 
 def get_numeric_steering(prediction: str) -> float:
@@ -22,12 +31,12 @@ def get_numeric_steering(prediction: str) -> float:
     return steering
 
 
-def get_ray_cast(max_value: float, min_value: float) -> [float]:
+def get_ray_cast(max_value: float, min_value: float, client) -> [float]:
     """
     Ask simulator for ray cast and preprocess it
     """
-    result = send_command_to_unity("GET_INFOS_RAYCAST")
-    result_splitted = result.split(';')
+    result = send_command_to_unity(client, "GET_INFOS_RAYCAST")
+    result_splitted = [result.split(';')[0]]
     if len(result_splitted) != 1:
         return None
     raycast = result_splitted[0]
@@ -37,7 +46,7 @@ def get_ray_cast(max_value: float, min_value: float) -> [float]:
     return [(float(elem) - min_value) / (max_value - min_value) for elem in splitted_raycast[2:]]
 
 
-def loop(rf_model):
+def loop(rf_model, client):
     """
     Loop where we use the AI prediction to drive
     """
@@ -45,29 +54,37 @@ def loop(rf_model):
     min_value = float(config.get('normalization', 'ray_value_min'))
 
     for i in range(1000):
-        float_arr = get_ray_cast(max_value, min_value)
+        float_arr = get_ray_cast(max_value, min_value, client)
         prediction = rf_model.predict(np.array([float_arr]))
-        send_command_to_unity(f"SET_SPEED:{0.7};SET_STEERING:{get_numeric_steering(prediction)}")
+        print(f'pred: {prediction}')
+        send_command_to_unity(client, f"SET_SPEED:{0.7};SET_STEERING:{get_numeric_steering(prediction)}")
 
 
 def main():
     unity_process = subprocess.Popen([config.get('unity', 'env_path')])
     time.sleep(5)
 
-    with open('random_forest_model3.pkl', 'rb') as f:
-        rf_model = pickle.load(f)
-    try:
-        for _ in range(5):
-            loop(rf_model)
-            send_command_to_unity("SET_RANDOM_POSITION")
-    except Exception as e:
-        print(e)
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    send_command_to_unity("END_SIMULATION")
+    try:
+        client.connect((HOST, PORT))
+        print('Connexion vers ' + HOST + ':' + str(PORT) + ' réussie.')
+        with open('random_forest_model2.pkl', 'rb') as f:
+            rf_model = pickle.load(f)
+        loop(rf_model, client)
+
+    except Exception as e:
+        print("Erreur lors de la connexion ou de l'envoi: ", e)
+    finally:
+        print('Déconnexion.')
+        client.close()
     if unity_process:
         unity_process.terminate()
 
 
 if __name__ == '__main__':
     config = load_config('config.ini')
+    HOST = '0.0.0.0'  # Server IP
+    PORT = 8085  # Server Port
+    csv_file = config.get('DEFAULT', 'csv_path')
     main()

@@ -206,7 +206,7 @@ def main():
 
 
 if __name__ == '__main__':
-    config = load_config('config.ini')
+    config = load_config(os.path.join('config.ini'))
 
     key_map = {
         'z': {'value': 0.0, 'activated': 0, 'opposite': 's', 'increase': False},

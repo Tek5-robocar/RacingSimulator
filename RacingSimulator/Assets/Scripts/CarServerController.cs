@@ -141,7 +141,7 @@ public class CarServerController : MonoBehaviour
     public string HandleClientCommand(string message)
     {
         string stringResponse = "";
-        string[] commands = message.Split(';');
+        string[] commands = message.Split(';', StringSplitOptions.RemoveEmptyEntries);
         for (int i = 0; i < commands.Length; i++)
         {
             string[] splittedMessage = commands[i].Split(":", StringSplitOptions.RemoveEmptyEntries);

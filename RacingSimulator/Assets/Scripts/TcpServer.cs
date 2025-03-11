@@ -16,18 +16,20 @@ public class TcpServer : MonoBehaviour
     public ViewDropDown viewDropDown;
     public Transform startPosition;
     public GameObject canvas;
-
-    private int port = 8085;
     private readonly ConcurrentQueue<TcpClient> addClientQueue = new();
     private readonly List<(TcpClient, CarServerController)> connectedClients = new();
     private readonly string folderPath = Path.Combine("CarMaterialVariation");
     private readonly ConcurrentQueue<(TcpClient, string)> messageQueue = new();
     private readonly ConcurrentQueue<TcpClient> removeClientQueue = new();
     private readonly ConcurrentQueue<(TcpClient, string)> responseQueue = new();
+
     private Thread broadcastThread;
+
     // private bool isBroadcasting = true;
     private bool isServerRunning;
     private Material[] materials;
+
+    private readonly int port = 8085;
     private TcpListener tcpListener;
 
     private void Start()
@@ -55,6 +57,14 @@ public class TcpServer : MonoBehaviour
                 responseQueue.Enqueue((message.Item1, response));
             }
 
+        // if (responseQueue.Count > 0)
+        // {
+        // foreach ((TcpClient, string) response in GroupResponseByClient())
+        // {
+        // Debug.Log($"broadcasting: {response.Item1}, {response.Item2}");
+        // BroadcastMessage(response.Item2, response.Item1);
+        // }
+        // }
         while (responseQueue.Count > 0)
             if (responseQueue.TryDequeue(out var response))
                 if (response.Item1 != null)
@@ -77,6 +87,21 @@ public class TcpServer : MonoBehaviour
             Debug.Log("Closing client connection: " + client.Client.RemoteEndPoint);
             client.Close();
         }
+    }
+
+    private List<(TcpClient, string)> GroupResponseByClient()
+    {
+        List<(TcpClient, string)> groupedResponses = new();
+        while (responseQueue.TryDequeue(out var response))
+        {
+            var groupedResponse = groupedResponses.Find(x => x.Item1 == response.Item1);
+            if (groupedResponse != default((TcpClient, string)))
+                groupedResponse.Item2 += ";" + response.Item2;
+            else
+                groupedResponses.Add(response);
+        }
+
+        return groupedResponses;
     }
 
     private void AddClient(TcpClient tcpClient)

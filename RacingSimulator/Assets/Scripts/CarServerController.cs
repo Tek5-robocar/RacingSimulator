@@ -209,7 +209,7 @@ public class CarServerController : MonoBehaviour
         {
             ResetCarPosition();
         }
-        // carController.Move(Input.GetAxis("Vertical"));
-        // carController.Turn(Input.GetAxis("Horizontal"));
+        carController.Move(Input.GetAxis("Vertical"));
+        carController.Turn(Input.GetAxis("Horizontal"));
     }
 }

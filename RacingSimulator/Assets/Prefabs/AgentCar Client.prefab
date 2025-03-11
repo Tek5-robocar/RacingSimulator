@@ -1018,8 +1018,8 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8069238868502814883}
   serializedVersion: 4
-  m_Mass: 1500
-  m_Drag: 0
+  m_Mass: 2000
+  m_Drag: 0.08
   m_AngularDrag: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
@@ -1061,10 +1061,10 @@ MonoBehaviour:
   passiveBrakeForce: 10000
   directionChangeBrakeForce: 3000
   maxSteerAngle: 40
-  maxSpeed: 50
-  minSpeed: -50
+  maxSpeed: 75
+  minSpeed: -75
   forwardFrictionStiffness: 2
-  sidewaysFrictionStiffness: 3
+  sidewaysFrictionStiffness: 10
 --- !u!65 &1117120738670346054
 BoxCollider:
   m_ObjectHideFlags: 0

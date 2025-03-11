@@ -13,6 +13,7 @@ public class CarServerController : MonoBehaviour
     public Transform startPosition;
     
     private int numberRay = 10;
+    private float fov = 180;
     private readonly Dictionary<string, Func<float, string>> floatActions;
     private readonly Dictionary<string, Func<string>> voidActions;
     private TcpListener server;
@@ -59,7 +60,16 @@ public class CarServerController : MonoBehaviour
                     return "KO:SET_NUMBER_RAY";
                 }
                 this.numberRay = (int)numberRay;
-                return "OK:SET_STEERING";
+                return "OK:SET_NUMBER_RAY";
+            } },
+            { "SET_FOV", (float fov) =>
+            {
+                if (fov < 1 || fov > 180)
+                {
+                    return "KO:SET_FOV";
+                }
+                this.fov = fov;
+                return "OK:SET_FOV";
             } },
         };
         
@@ -90,7 +100,7 @@ public class CarServerController : MonoBehaviour
             } },
             { "GET_INFOS_RAYCAST", () =>
             {
-                List<int> distance = RenderTextureToString.ConvertRenderTextureToFile(carVisionCamera.targetTexture, numberRay);
+                List<int> distance = RenderTextureToString.ConvertRenderTextureToFile(this.carVisionCamera.targetTexture, this.numberRay, this.fov);
                 if (distance.Count == numberRay)
                 {
                     string buffer = "OK:GET_INFOS_RAYCAST";
@@ -99,7 +109,6 @@ public class CarServerController : MonoBehaviour
                         buffer += ":";
                         buffer += distanceToLine.ToString("0.00");
                     }
-
                     return buffer;
                 }
                 return "KO:GET_INFOS_RAYCAST";

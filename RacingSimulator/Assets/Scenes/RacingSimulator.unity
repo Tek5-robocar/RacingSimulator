@@ -436,6 +436,16 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0ac7649b22d33864c9cf79c3ba4b3456, type: 3}
+--- !u!1 &753906255 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7576198334888635861, guid: 144b9ec4dce2a11d8941d3fefe5aafb2, type: 3}
+  m_PrefabInstance: {fileID: 145551752}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &765712243 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7544466350545142194, guid: 4b3f00455f3bcd8febb3b9831301df12, type: 3}
+  m_PrefabInstance: {fileID: 265411021}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &852261596
 GameObject:
   m_ObjectHideFlags: 0
@@ -2852,8 +2862,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tracks:
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 765712243}
+  - {fileID: 753906255}
   agents: {fileID: 145996326}
 --- !u!224 &5849791106831375438
 RectTransform:

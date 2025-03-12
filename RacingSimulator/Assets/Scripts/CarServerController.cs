@@ -22,6 +22,13 @@ public class CarServerController : MonoBehaviour
     private float timer = 0f;
     private GameObject textMeshGo;
     private TextMeshProUGUI textMesh;
+    private List<string> touchedCheckpoints = new List<string>();
+    private int numberCollider = 0;
+
+    public void SetNumberCollider(int number)
+    {
+        numberCollider = number;
+    }
 
     ~CarServerController()
     {
@@ -191,6 +198,22 @@ public class CarServerController : MonoBehaviour
         if (other.CompareTag("Lines"))
         {
             ResetCarPosition();
+        } else if (other.CompareTag("Checkpoint"))
+        {
+            if (!touchedCheckpoints.Contains(other.name))
+            {
+                touchedCheckpoints.Add(other.name);
+            }  
+        } else if (other.CompareTag("Finish"))
+        {
+            if (touchedCheckpoints.Count == numberCollider)
+            {
+                Debug.Log("you finished a lap !!");
+            }
+            else
+            {
+                Debug.Log("you cheated !!");
+            }
         }
     }
     
@@ -218,7 +241,7 @@ public class CarServerController : MonoBehaviour
         {
             ResetCarPosition();
         }
-        carController.Move(Input.GetAxis("Vertical"));
-        carController.Turn(Input.GetAxis("Horizontal"));
+        // carController.Move(Input.GetAxis("Vertical"));
+        // carController.Turn(Input.GetAxis("Horizontal"));
     }
 }

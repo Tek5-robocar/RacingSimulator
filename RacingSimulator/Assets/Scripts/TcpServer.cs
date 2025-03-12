@@ -16,6 +16,7 @@ public class TcpServer : MonoBehaviour
     public ViewDropDown viewDropDown;
     public Transform startPosition;
     public GameObject canvas;
+    public LapManager lapManager;
     private readonly ConcurrentQueue<TcpClient> addClientQueue = new();
     private readonly List<(TcpClient, CarServerController)> connectedClients = new();
     private readonly string folderPath = Path.Combine("CarMaterialVariation");
@@ -126,6 +127,8 @@ public class TcpServer : MonoBehaviour
         for (var i = 0; i < newGo.transform.childCount; i++)
             foreach (var myCamera in newGo.transform.GetChild(i).GetComponents<Camera>())
                 viewDropDown.AddCamera(myCamera, carsController.CarIndex);
+        
+        this.lapManager.AddCar(newGo);
     }
 
     private void StartServer()
@@ -238,6 +241,7 @@ public class TcpServer : MonoBehaviour
             foreach (var myCamera in go.transform.GetChild(i).GetComponents<Camera>())
                 viewDropDown.RemoveCamera(myCamera, client.Item2.CarIndex);
         connectedClients.RemoveAt(connectedClients.FindIndex(tuple => tuple.Item1 == tcpClient));
+        lapManager.RemoveCar(go);
         Destroy(go);
     }
 

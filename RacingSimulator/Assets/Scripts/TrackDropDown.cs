@@ -6,6 +6,7 @@ public class TrackDropDown : MonoBehaviour
 {
     public List<GameObject> tracks = new List<GameObject>();
     public GameObject agents;
+    public LapManager lapManager;
                                    
     private TMP_Dropdown dropdown;
     private GameObject selectedTrack;
@@ -20,6 +21,7 @@ public class TrackDropDown : MonoBehaviour
         }
 
         tracks[0].SetActive(true);
+        lapManager.SetTrack(tracks[0]);
         dropdown.onValueChanged.AddListener(delegate
         {
             DropdownValueChanged();    
@@ -33,6 +35,7 @@ public class TrackDropDown : MonoBehaviour
             track.SetActive(false);
         }
         tracks[dropdown.value].SetActive(true);
+        lapManager.SetTrack(tracks[dropdown.value]);
         for (int i = 0; i < agents.transform.childCount; i++)
         {
             CarServerController carServerController = agents.transform.GetChild(i).GetComponent<CarServerController>();

@@ -166,6 +166,14 @@ LineRenderer:
   m_SortingOrder: 0
   m_Positions:
   - {x: 0, y: 0, z: 0}
+  - {x: -1.7, y: 0, z: 5.27}
+  - {x: -4.95, y: 0, z: 12.9}
+  - {x: -8.43, y: 0, z: 18.78}
+  - {x: -12.8, y: 0, z: 24.77}
+  - {x: -16.7, y: 0, z: 29.1}
+  - {x: -21.3, y: 0, z: 33.2}
+  - {x: -25.6, y: 0, z: 36.6}
+  - {x: -28.1, y: 0, z: 38.1}
   - {x: -36.2, y: 0, z: 42.46}
   m_Parameters:
     serializedVersion: 3
@@ -238,6 +246,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5593d02b8998334ba8822bc4059916f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  withOutline: 1
 --- !u!1 &5374102146406445906
 GameObject:
   m_ObjectHideFlags: 0
@@ -352,6 +361,12 @@ LineRenderer:
   m_SortingOrder: 0
   m_Positions:
   - {x: 0, y: 0, z: 0}
+  - {x: -2.04, y: 0, z: 3.69}
+  - {x: -4.5, y: 0, z: 7.34}
+  - {x: -7.64, y: 0, z: 11.28}
+  - {x: -11.94, y: 0, z: 15.57}
+  - {x: -16.6, y: 0, z: 19.1}
+  - {x: -20, y: 0, z: 21.3}
   - {x: -24.79, y: 0, z: 23.72}
   m_Parameters:
     serializedVersion: 3
@@ -424,3 +439,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5593d02b8998334ba8822bc4059916f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  withOutline: 1

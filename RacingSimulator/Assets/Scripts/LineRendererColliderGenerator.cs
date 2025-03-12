@@ -1,21 +1,33 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(LineRenderer))]
 public class LineRendererColliderGenerator : MonoBehaviour
 {
-    private float _colliderWidth; // Width of the collider
+    public bool withOutline = false;
+    public event Action OnStartFinished;
+    
+    private float _colliderWidth;
     private LineRenderer lineRenderer;
+    private Outline outline;
+    private Color lineColor = Color.white;
+    private List<BoxCollider> colliders = new List<BoxCollider>();
 
     private void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
         _colliderWidth = lineRenderer.startWidth;
         CreateColliders();
-        var outline = gameObject.AddComponent<Outline>();
-
-        outline.OutlineMode = Outline.Mode.OutlineAll;
-        outline.OutlineColor = Color.white;
-        outline.OutlineWidth = 5f;
+        
+        if (withOutline)
+        {
+            outline = gameObject.AddComponent<Outline>();
+            outline.OutlineMode = Outline.Mode.OutlineAll;
+            outline.OutlineColor = lineColor;
+            outline.OutlineWidth = 5f;
+        }
+        OnStartFinished?.Invoke();
     }
 
     private void CreateColliders()
@@ -28,6 +40,7 @@ public class LineRendererColliderGenerator : MonoBehaviour
             var endPos = lineRenderer.GetPosition(i + 1);
 
             var newCollider = new GameObject(lineRenderer.name + "Collider").AddComponent<BoxCollider>();
+            colliders.Add(newCollider);
 
             newCollider.tag = lineRenderer.tag;
             newCollider.gameObject.layer = lineRenderer.gameObject.layer;
@@ -47,5 +60,10 @@ public class LineRendererColliderGenerator : MonoBehaviour
 
             newCollider.isTrigger = true;
         }
+    }
+
+    public List<BoxCollider> GetColliders()
+    {
+        return colliders;
     }
 }

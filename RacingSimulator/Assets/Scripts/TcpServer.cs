@@ -34,6 +34,7 @@ public class TcpServer : MonoBehaviour
     private bool _isServerRunning;
     private Material[] _materials;
     private TcpListener _tcpListener;
+    private readonly Dictionary<TcpClient, CarServerController> _clientDictionary = new();
 
     private void Start()
     {
@@ -55,6 +56,12 @@ public class TcpServer : MonoBehaviour
             if (_messageQueue.TryDequeue(out (TcpClient, string) message))
             {
                 (_, CarServerController carServerController) = _connectedClients.Find(tuple => tuple.Item1 == message.Item1);
+                // if (_clientDictionary.TryGetValue(message.Item1, out CarServerController carServerController))
+                // {
+                    // string response = carServerController.HandleClientCommand(message.Item2);
+                    // _responseQueue.Enqueue((message.Item1, response));
+                // }
+
                 string response = carServerController.HandleClientCommand(message.Item2);
                 _responseQueue.Enqueue((message.Item1, response));
             }

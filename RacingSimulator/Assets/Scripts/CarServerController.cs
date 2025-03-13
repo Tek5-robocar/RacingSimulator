@@ -148,8 +148,8 @@ public class CarServerController : MonoBehaviour
     {
         UpdateTimer();
         if (transform.position.y < -20) ResetCarPosition();
-        carController.Move(Input.GetAxis("Vertical"));
-        carController.Turn(Input.GetAxis("Horizontal"));
+        // carController.Move(Input.GetAxis("Vertical"));
+        // carController.Turn(Input.GetAxis("Horizontal"));
     }
 
     private void OnTriggerEnter(Collider other)

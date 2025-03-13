@@ -982,7 +982,7 @@ GameObject:
   - component: {fileID: 905734149271991041}
   - component: {fileID: 1117120738670346054}
   - component: {fileID: 6745516715603530610}
-  m_Layer: 8
+  m_Layer: 6
   m_Name: AgentCar Client
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -1102,6 +1102,7 @@ MonoBehaviour:
   carVisionCamera: {fileID: 3601819543352610277}
   canvas: {fileID: 0}
   startPosition: {fileID: 0}
+  trackDropDown: {fileID: 0}
 --- !u!1 &8233794283275251808
 GameObject:
   m_ObjectHideFlags: 0

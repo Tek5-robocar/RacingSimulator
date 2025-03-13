@@ -7,7 +7,7 @@ public class RenderTextureToString : MonoBehaviour
 
     public static List<int> ConvertRenderTextureToFile(RenderTexture renderTexture, int numberRay, float fieldView)
     {
-        var currentRT = RenderTexture.active;
+        RenderTexture currentRT = RenderTexture.active;
         RenderTexture.active = renderTexture;
 
         if (_texture2D == null)
@@ -17,24 +17,24 @@ public class RenderTextureToString : MonoBehaviour
 
         RenderTexture.active = currentRT;
 
-        var angleOffset = fieldView / (numberRay - 1);
-        var stepSize = 1;
+        float angleOffset = fieldView / (numberRay - 1);
+        int stepSize = 1;
 
-        var distances = new List<int>();
-        for (var k = 0; k < numberRay; k++)
+        List<int> distances = new List<int>();
+        for (int k = 0; k < numberRay; k++)
         {
-            var hit = false;
+            bool hit = false;
             float x = _texture2D.width / 2f;
             float y = _texture2D.height - 1f;
-            var hitDist = 0;
+            int hitDist = 0;
 
             while (x >= 0 && x < _texture2D.width && y >= 0 && y < _texture2D.height)
             {
-                var angle = k * angleOffset * Mathf.PI / 180 +
-                            angleOffset * Mathf.PI / 180 * ((180 - fieldView) / angleOffset / 2);
-                var roundedX = Mathf.FloorToInt(x);
-                var roundedY = Mathf.FloorToInt(y);
-                var pixelColor = _texture2D.GetPixel(roundedX, _texture2D.height - 1 - roundedY);
+                float angle = k * angleOffset * Mathf.PI / 180 +
+                              angleOffset * Mathf.PI / 180 * ((180 - fieldView) / angleOffset / 2);
+                int roundedX = Mathf.FloorToInt(x);
+                int roundedY = Mathf.FloorToInt(y);
+                Color pixelColor = _texture2D.GetPixel(roundedX, _texture2D.height - 1 - roundedY);
                 if (pixelColor.r > 0.9f && pixelColor.g > 0.9f && pixelColor.b > 0.9f)
                 {
                     distances.Add(hitDist);
@@ -49,7 +49,7 @@ public class RenderTextureToString : MonoBehaviour
 
             if (!hit) distances.Add(hitDist);
         }
-
+        
         return distances;
     }
 }

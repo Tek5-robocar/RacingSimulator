@@ -2,34 +2,70 @@ using UnityEngine;
 
 public class CarController : MonoBehaviour
 {
-    [Header("Wheel Colliders")]
-    public WheelCollider frontLeftWheel;
+    [Header("Wheel Colliders")] public WheelCollider frontLeftWheel;
+
     public WheelCollider frontRightWheel;
     public WheelCollider rearLeftWheel;
     public WheelCollider rearRightWheel;
 
-    [Header("Wheel Transforms")]
-    public Transform frontLeftTransform;
+    [Header("Wheel Transforms")] public Transform frontLeftTransform;
+
     public Transform frontRightTransform;
     public Transform rearLeftTransform;
     public Transform rearRightTransform;
 
-    [Header("Car Settings")]
-    public float motorForce = 1500f;
+    [Header("Car Settings")] public float motorForce = 1500f;
+
     public float passiveBrakeForce = 500f;
     public float directionChangeBrakeForce = 3000f;
     public float maxSteerAngle = 30f;
     public float maxSpeed = 50f;
     public float minSpeed = -50f;
     public float forwardFrictionStiffness = 2f;
-    public float sidewaysFrictionStiffness = 2f;
 
-    private float currentSteerAngle;
-    private float currentBrakeForce;
-    private float currentMotorForce;
+    public float sidewaysFrictionStiffness = 2f;
     // private bool isBraking;
 
-    private Rigidbody carRigidbody;
+    private Rigidbody _carRigidbody;
+    private float _currentBrakeForce;
+    private float _currentMotorForce;
+
+    private float _currentSteerAngle;
+
+    public void Reset()
+    {
+        _currentSteerAngle = 0f;
+        _currentBrakeForce = 0f;
+        _currentMotorForce = 0f;
+        // isBraking = false;
+        _carRigidbody.linearVelocity = Vector3.zero;
+        _carRigidbody.angularVelocity = Vector3.zero;
+
+        frontLeftWheel.steerAngle = _currentSteerAngle;
+        frontRightWheel.steerAngle = _currentSteerAngle;
+
+        frontLeftWheel.motorTorque = 0f;
+        frontRightWheel.motorTorque = 0f;
+        rearLeftWheel.motorTorque = 0f;
+        rearRightWheel.motorTorque = 0f;
+    }
+
+    private void Start()
+    {
+        _carRigidbody = GetComponent<Rigidbody>();
+
+        AdjustWheelGrip(frontLeftWheel);
+        AdjustWheelGrip(frontRightWheel);
+        AdjustWheelGrip(rearLeftWheel);
+        AdjustWheelGrip(rearRightWheel);
+    }
+
+    private void FixedUpdate()
+    {
+        LimitSpeed();
+        HandleMotor();
+        UpdateWheels();
+    }
 
     private void AdjustWheelGrip(WheelCollider wheel)
     {
@@ -42,71 +78,37 @@ public class CarController : MonoBehaviour
         wheel.sidewaysFriction = sidewaysFriction;
     }
 
-    private void Start()
-    {
-        carRigidbody = GetComponent<Rigidbody>();
-
-        AdjustWheelGrip(frontLeftWheel);
-        AdjustWheelGrip(frontRightWheel);
-        AdjustWheelGrip(rearLeftWheel);
-        AdjustWheelGrip(rearRightWheel);
-    }
-
-    public void Reset()
-    {
-        currentSteerAngle = 0f;
-        currentBrakeForce = 0f;
-        currentMotorForce = 0f;
-        // isBraking = false;
-        carRigidbody.linearVelocity = Vector3.zero;
-        carRigidbody.angularVelocity = Vector3.zero;
-        
-        frontLeftWheel.steerAngle = currentSteerAngle;
-        frontRightWheel.steerAngle = currentSteerAngle;
-        
-        frontLeftWheel.motorTorque = 0f;
-        frontRightWheel.motorTorque = 0f;
-        rearLeftWheel.motorTorque = 0f;
-        rearRightWheel.motorTorque = 0f;
-    }
-
-    private void FixedUpdate()
-    {
-        LimitSpeed();
-        HandleMotor();
-        UpdateWheels();
-    }
-
     public void Move(float force)
     {
-        currentMotorForce = force * motorForce;
+        _currentMotorForce = force * motorForce;
     }
 
     private void HandleMotor()
     {
-        float currentSpeed = carRigidbody.linearVelocity.magnitude * Mathf.Sign(Vector3.Dot(carRigidbody.linearVelocity, transform.forward));
-        bool shouldBrake = (currentMotorForce > 0 && currentSpeed < 0) || (currentMotorForce < 0 && currentSpeed > 0);
+        float currentSpeed = _carRigidbody.linearVelocity.magnitude *
+                             Mathf.Sign(Vector3.Dot(_carRigidbody.linearVelocity, transform.forward));
+        bool shouldBrake = (_currentMotorForce > 0 && currentSpeed < 0) || (_currentMotorForce < 0 && currentSpeed > 0);
 
         if (shouldBrake)
         {
-            currentBrakeForce = directionChangeBrakeForce;
+            _currentBrakeForce = directionChangeBrakeForce;
             frontLeftWheel.motorTorque = 0f;
             frontRightWheel.motorTorque = 0f;
             rearLeftWheel.motorTorque = 0f;
             rearRightWheel.motorTorque = 0f;
         }
-        else if (Mathf.Abs(currentMotorForce) > 0.01f)
+        else if (Mathf.Abs(_currentMotorForce) > 0.01f)
         {
-            frontLeftWheel.motorTorque = currentMotorForce;
-            frontRightWheel.motorTorque = currentMotorForce;
-            rearLeftWheel.motorTorque = currentMotorForce;
-            rearRightWheel.motorTorque = currentMotorForce;
+            frontLeftWheel.motorTorque = _currentMotorForce;
+            frontRightWheel.motorTorque = _currentMotorForce;
+            rearLeftWheel.motorTorque = _currentMotorForce;
+            rearRightWheel.motorTorque = _currentMotorForce;
 
-            currentBrakeForce = 0f;
+            _currentBrakeForce = 0f;
         }
         else
         {
-            currentBrakeForce = passiveBrakeForce;
+            _currentBrakeForce = passiveBrakeForce;
         }
 
         ApplyBraking();
@@ -114,10 +116,10 @@ public class CarController : MonoBehaviour
 
     private void ApplyBraking()
     {
-        frontLeftWheel.brakeTorque = currentBrakeForce;
-        frontRightWheel.brakeTorque = currentBrakeForce;
-        rearLeftWheel.brakeTorque = currentBrakeForce;
-        rearRightWheel.brakeTorque = currentBrakeForce;
+        frontLeftWheel.brakeTorque = _currentBrakeForce;
+        frontRightWheel.brakeTorque = _currentBrakeForce;
+        rearLeftWheel.brakeTorque = _currentBrakeForce;
+        rearRightWheel.brakeTorque = _currentBrakeForce;
     }
 
     public void Turn(float direction)
@@ -125,10 +127,10 @@ public class CarController : MonoBehaviour
         // float speedFactor = Mathf.Clamp01(carRigidbody.linearVelocity.magnitude / maxSpeed);
         // float dynamicSteerAngle = maxSteerAngle * (1 - speedFactor);
 
-        currentSteerAngle = maxSteerAngle * direction / 2;
+        _currentSteerAngle = maxSteerAngle * direction / 2;
         // currentSteerAngle = dynamicSteerAngle * direction;
-        frontLeftWheel.steerAngle = currentSteerAngle;
-        frontRightWheel.steerAngle = currentSteerAngle;
+        frontLeftWheel.steerAngle = _currentSteerAngle;
+        frontRightWheel.steerAngle = _currentSteerAngle;
     }
 
     private void UpdateWheels()
@@ -141,30 +143,27 @@ public class CarController : MonoBehaviour
 
     private void UpdateWheelPose(WheelCollider wheelCollider, Transform wheelTransform)
     {
-        wheelCollider.GetWorldPose(out var pos, out var rot);
+        wheelCollider.GetWorldPose(out Vector3 pos, out Quaternion rot);
         wheelTransform.position = pos;
         wheelTransform.rotation = rot;
     }
 
     public float Speed()
     {
-        return carRigidbody.linearVelocity.magnitude;
+        return _carRigidbody.linearVelocity.magnitude;
     }
-    
+
     public float Steering()
     {
         // float speedFactor = Mathf.Clamp01(carRigidbody.linearVelocity.magnitude / maxSpeed);
         // float dynamicSteerAngle = maxSteerAngle * (1 - speedFactor);
 
         // return currentSteerAngle / dynamicSteerAngle;
-        return currentSteerAngle / maxSteerAngle;
+        return _currentSteerAngle / maxSteerAngle;
     }
 
     private void LimitSpeed()
     {
-        if (Speed() > maxSpeed || Speed() < minSpeed)
-        {
-            currentMotorForce = 0f;
-        }
+        if (Speed() > maxSpeed || Speed() < minSpeed) _currentMotorForce = 0f;
     }
 }

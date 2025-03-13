@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -14,76 +15,67 @@ public class TcpServer : MonoBehaviour
     public GameObject agents;
     public GameObject agentPrefab;
     public ViewDropDown viewDropDown;
+    public TrackDropDown trackDropDown;
     public Transform startPosition;
     public GameObject canvas;
     public LapManager lapManager;
-    private readonly ConcurrentQueue<TcpClient> addClientQueue = new();
-    private readonly List<(TcpClient, CarServerController)> connectedClients = new();
-    private readonly string folderPath = Path.Combine("CarMaterialVariation");
-    private readonly ConcurrentQueue<(TcpClient, string)> messageQueue = new();
-    private readonly ConcurrentQueue<TcpClient> removeClientQueue = new();
-    private readonly ConcurrentQueue<(TcpClient, string)> responseQueue = new();
+    
+    private readonly ConcurrentQueue<TcpClient> _addClientQueue = new();
+    private readonly List<(TcpClient, CarServerController)> _connectedClients = new();
+    private readonly string _folderPath = Path.Combine("CarMaterialVariation");
+    private readonly ConcurrentQueue<(TcpClient, string)> _messageQueue = new();
 
-    private Thread broadcastThread;
+    private const int Port = 8085;
+    private readonly ConcurrentQueue<TcpClient> _removeClientQueue = new();
+    private readonly ConcurrentQueue<(TcpClient, string)> _responseQueue = new();
 
-    // private bool isBroadcasting = true;
-    private bool isServerRunning;
-    private Material[] materials;
+    private Thread _broadcastThread;
 
-    private readonly int port = 8085;
-    private TcpListener tcpListener;
+    private bool _isServerRunning;
+    private Material[] _materials;
+    private TcpListener _tcpListener;
 
     private void Start()
     {
         StartServer();
-        materials = Resources.LoadAll<Material>(folderPath);
-        // StartBroadcastThread();
+        _materials = Resources.LoadAll<Material>(_folderPath);
     }
 
     private void Update()
     {
-        while (addClientQueue.Count > 0)
-            if (addClientQueue.TryDequeue(out var tcpClient))
+        while (_addClientQueue.Count > 0)
+            if (_addClientQueue.TryDequeue(out TcpClient tcpClient))
                 AddClient(tcpClient);
 
-        while (removeClientQueue.Count > 0)
-            if (removeClientQueue.TryDequeue(out var client))
+        while (_removeClientQueue.Count > 0)
+            if (_removeClientQueue.TryDequeue(out TcpClient client))
                 RemoveClient(client);
 
-        while (messageQueue.Count > 0)
-            if (messageQueue.TryDequeue(out var message))
+        while (_messageQueue.Count > 0)
+            if (_messageQueue.TryDequeue(out (TcpClient, string) message))
             {
-                var (_, carServerController) = connectedClients.Find(tuple => tuple.Item1 == message.Item1);
-                var response = carServerController.HandleClientCommand(message.Item2);
-                responseQueue.Enqueue((message.Item1, response));
+                (_, CarServerController carServerController) = _connectedClients.Find(tuple => tuple.Item1 == message.Item1);
+                string response = carServerController.HandleClientCommand(message.Item2);
+                _responseQueue.Enqueue((message.Item1, response));
             }
 
-        // if (responseQueue.Count > 0)
-        // {
-        // foreach ((TcpClient, string) response in GroupResponseByClient())
-        // {
-        // Debug.Log($"broadcasting: {response.Item1}, {response.Item2}");
-        // BroadcastMessage(response.Item2, response.Item1);
-        // }
-        // }
-        while (responseQueue.Count > 0)
-            if (responseQueue.TryDequeue(out var response))
+        while (_responseQueue.Count > 0)
+            if (_responseQueue.TryDequeue(out (TcpClient, string) response))
                 if (response.Item1 != null)
                     BroadcastMessage(response.Item2, response.Item1);
     }
 
     private void OnApplicationQuit()
     {
-        // isBroadcasting = false;
-        if (broadcastThread != null && broadcastThread.IsAlive) broadcastThread.Join();
+        if (_broadcastThread != null && _broadcastThread.IsAlive) _broadcastThread.Join();
 
-        if (isServerRunning)
+        if (_isServerRunning)
         {
-            tcpListener.Stop();
+            _tcpListener.Stop();
             Debug.Log("TCP Server stopped.");
         }
 
-        foreach (var (client, _) in connectedClients)
+        foreach ((TcpClient client, CarServerController _) in _connectedClients)
         {
             Debug.Log("Closing client connection: " + client.Client.RemoteEndPoint);
             client.Close();
@@ -93,9 +85,9 @@ public class TcpServer : MonoBehaviour
     private List<(TcpClient, string)> GroupResponseByClient()
     {
         List<(TcpClient, string)> groupedResponses = new();
-        while (responseQueue.TryDequeue(out var response))
+        while (_responseQueue.TryDequeue(out (TcpClient, string) response))
         {
-            var groupedResponse = groupedResponses.Find(x => x.Item1 == response.Item1);
+            (TcpClient, string) groupedResponse = groupedResponses.Find(x => x.Item1 == response.Item1);
             if (groupedResponse != default((TcpClient, string)))
                 groupedResponse.Item2 += ";" + response.Item2;
             else
@@ -107,40 +99,41 @@ public class TcpServer : MonoBehaviour
 
     private void AddClient(TcpClient tcpClient)
     {
-        var newGo = Instantiate(agentPrefab, agents.transform, true);
+        GameObject newGo = Instantiate(agentPrefab, agents.transform, true);
         newGo.transform.position = startPosition.position;
-        if (materials.Length > 0)
-            for (var i = 0; i < newGo.transform.childCount; i++)
+        if (_materials.Length > 0)
+            for (int i = 0; i < newGo.transform.childCount; i++)
                 if (newGo.transform.GetChild(i).name == "Body")
                 {
-                    var randomMaterial = materials[Random.Range(0, materials.Length)];
-                    var tempMaterials = newGo.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().materials;
+                    Material randomMaterial = _materials[Random.Range(0, _materials.Length)];
+                    Material[] tempMaterials = newGo.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().materials;
                     tempMaterials[0] = randomMaterial;
                     newGo.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().materials = tempMaterials;
                 }
 
-        var carsController = newGo.GetComponent<CarServerController>();
-        carsController.CarIndex = connectedClients.Count;
+        CarServerController carsController = newGo.GetComponent<CarServerController>();
+        carsController.CarIndex = _connectedClients.Count;
         carsController.canvas = canvas;
         carsController.startPosition = startPosition;
-        connectedClients.Add((tcpClient, carsController));
-        for (var i = 0; i < newGo.transform.childCount; i++)
-            foreach (var myCamera in newGo.transform.GetChild(i).GetComponents<Camera>())
+        carsController.trackDropDown = trackDropDown; 
+        _connectedClients.Add((tcpClient, carsController));
+        for (int i = 0; i < newGo.transform.childCount; i++)
+            foreach (Camera myCamera in newGo.transform.GetChild(i).GetComponents<Camera>())
                 viewDropDown.AddCamera(myCamera, carsController.CarIndex);
-        
-        this.lapManager.AddCar(newGo);
+
+        lapManager.AddCar(newGo);
     }
 
     private void StartServer()
     {
         try
         {
-            tcpListener = new TcpListener(IPAddress.Loopback, port);
-            tcpListener.Start();
-            isServerRunning = true;
+            _tcpListener = new TcpListener(IPAddress.Loopback, Port);
+            _tcpListener.Start();
+            _isServerRunning = true;
             Debug.Log("TCP Server started, waiting for connections...");
 
-            tcpListener.BeginAcceptTcpClient(OnClientConnected, null);
+            _tcpListener.BeginAcceptTcpClient(OnClientConnected, null);
         }
         catch (Exception ex)
         {
@@ -152,39 +145,39 @@ public class TcpServer : MonoBehaviour
     {
         try
         {
-            var tcpClient = tcpListener.EndAcceptTcpClient(result);
+            TcpClient tcpClient = _tcpListener.EndAcceptTcpClient(result);
             Debug.Log("Client connected from: " + tcpClient.Client.RemoteEndPoint);
 
-            addClientQueue.Enqueue(tcpClient);
+            _addClientQueue.Enqueue(tcpClient);
 
-            var networkStream = tcpClient.GetStream();
-            var buffer = new byte[1024];
+            NetworkStream networkStream = tcpClient.GetStream();
+            byte[] buffer = new byte[1024];
             networkStream.BeginRead(buffer, 0, buffer.Length, OnDataReceived, new ConnectionState(tcpClient, buffer));
 
-            tcpListener.BeginAcceptTcpClient(OnClientConnected, null);
+            _tcpListener.BeginAcceptTcpClient(OnClientConnected, null);
         }
         catch (Exception ex)
         {
-            if (tcpListener.Pending())
+            if (_tcpListener.Pending())
                 Debug.LogError("Error handling client connection: " + ex.Message);
         }
     }
 
     private void OnDataReceived(IAsyncResult result)
     {
-        var state = (ConnectionState)result.AsyncState;
-        var tcpClient = state.TcpClient;
+        ConnectionState state = (ConnectionState)result.AsyncState;
+        TcpClient tcpClient = state.TcpClient;
         try
         {
-            var buffer = state.Buffer;
+            byte[] buffer = state.Buffer;
 
-            var networkStream = tcpClient.GetStream();
-            var bytesRead = networkStream.EndRead(result);
+            NetworkStream networkStream = tcpClient.GetStream();
+            int bytesRead = networkStream.EndRead(result);
 
             if (bytesRead > 0)
             {
-                var message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                messageQueue.Enqueue((tcpClient, message));
+                string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                _messageQueue.Enqueue((tcpClient, message));
 
                 networkStream.BeginRead(buffer, 0, buffer.Length, OnDataReceived, state);
             }
@@ -192,7 +185,7 @@ public class TcpServer : MonoBehaviour
             {
                 Debug.Log("Client disconnected: " + tcpClient.Client.RemoteEndPoint);
                 tcpClient.Close();
-                removeClientQueue.Enqueue(tcpClient);
+                _removeClientQueue.Enqueue(tcpClient);
             }
         }
         catch (Exception ex)
@@ -200,23 +193,23 @@ public class TcpServer : MonoBehaviour
             Debug.LogError("Error receiving data: " + ex.Message);
             Debug.Log("Client disconnected: " + tcpClient.Client.RemoteEndPoint);
             tcpClient.Close();
-            removeClientQueue.Enqueue(tcpClient);
+            _removeClientQueue.Enqueue(tcpClient);
         }
     }
 
     public void BroadcastMessage(string message, TcpClient tcpClient)
     {
-        var data = Encoding.ASCII.GetBytes(message);
+        byte[] data = Encoding.ASCII.GetBytes(message);
 
         try
         {
-            var stream = tcpClient.GetStream();
+            NetworkStream stream = tcpClient.GetStream();
             if (stream.CanWrite) stream.Write(data, 0, data.Length);
         }
         catch (Exception ex)
         {
             Debug.LogError("Error sending message to tcpClient: " + ex.Message);
-            removeClientQueue.Enqueue(tcpClient);
+            _removeClientQueue.Enqueue(tcpClient);
 
             tcpClient.Close();
         }
@@ -224,23 +217,23 @@ public class TcpServer : MonoBehaviour
 
     public void BroadcastMessageEveryone(string message)
     {
-        for (var i = connectedClients.Count - 1; i >= 0; i--)
+        for (int i = _connectedClients.Count - 1; i >= 0; i--)
         {
-            var client = connectedClients[i].Item1;
+            TcpClient client = _connectedClients[i].Item1;
             BroadcastMessage(message, client);
         }
     }
 
     private void RemoveClient(TcpClient tcpClient)
     {
-        var client = connectedClients.Find(client => client.Item1 == tcpClient);
+        (TcpClient, CarServerController) client = _connectedClients.Find(client => client.Item1 == tcpClient);
         if (client == default((TcpClient, CarServerController))) return;
 
-        var go = client.Item2.gameObject;
-        for (var i = 0; i < go.transform.childCount; i++)
-            foreach (var myCamera in go.transform.GetChild(i).GetComponents<Camera>())
+        GameObject go = client.Item2.gameObject;
+        for (int i = 0; i < go.transform.childCount; i++)
+            foreach (Camera myCamera in go.transform.GetChild(i).GetComponents<Camera>())
                 viewDropDown.RemoveCamera(myCamera, client.Item2.CarIndex);
-        connectedClients.RemoveAt(connectedClients.FindIndex(tuple => tuple.Item1 == tcpClient));
+        _connectedClients.RemoveAt(_connectedClients.FindIndex(tuple => tuple.Item1 == tcpClient));
         lapManager.RemoveCar(go);
         Destroy(go);
     }

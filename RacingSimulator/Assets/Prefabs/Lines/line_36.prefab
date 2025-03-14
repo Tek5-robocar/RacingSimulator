@@ -200,7 +200,9 @@ LineRenderer:
   m_SortingOrder: 0
   m_Positions:
   - {x: 0, y: 0, z: 0}
+  - {x: -1.6, y: 0, z: 8.76}
   - {x: -4.8, y: 0, z: 15.74}
+  - {x: -10.65, y: 0, z: 23.01}
   - {x: -15.22, y: 0, z: 26.84}
   m_Parameters:
     serializedVersion: 3
@@ -354,7 +356,9 @@ LineRenderer:
   m_SortingOrder: 0
   m_Positions:
   - {x: 0, y: 0, z: 0}
+  - {x: -2.2, y: 0, z: 6.4}
   - {x: -4.7, y: 0, z: 11.28}
+  - {x: -10.4, y: 0, z: 19}
   - {x: -16.93, y: 0, z: 24.74}
   m_Parameters:
     serializedVersion: 3

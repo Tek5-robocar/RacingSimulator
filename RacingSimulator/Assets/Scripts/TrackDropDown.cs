@@ -6,7 +6,7 @@ public class TrackDropDown : MonoBehaviour
 {
     public List<GameObject> tracks = new();
     public GameObject agents;
-    public LapManager lapManager;
+    public CentraleLine lapManager;
     public TextMeshProUGUI bestScoreText;
 
     private TMP_Dropdown _dropdown;

@@ -18,10 +18,9 @@ public class TcpServer : MonoBehaviour
     public TrackDropDown trackDropDown;
     public Transform startPosition;
     public GameObject canvas;
-    public LapManager lapManager;
+    public CentraleLine lapManager;
     
     private readonly ConcurrentQueue<TcpClient> _addClientQueue = new();
-    private readonly List<(TcpClient, CarServerController)> _connectedClients = new();
     private readonly string _folderPath = Path.Combine("CarMaterialVariation");
     private readonly ConcurrentQueue<(TcpClient, string)> _messageQueue = new();
 
@@ -55,15 +54,11 @@ public class TcpServer : MonoBehaviour
         while (_messageQueue.Count > 0)
             if (_messageQueue.TryDequeue(out (TcpClient, string) message))
             {
-                (_, CarServerController carServerController) = _connectedClients.Find(tuple => tuple.Item1 == message.Item1);
-                // if (_clientDictionary.TryGetValue(message.Item1, out CarServerController carServerController))
-                // {
-                    // string response = carServerController.HandleClientCommand(message.Item2);
-                    // _responseQueue.Enqueue((message.Item1, response));
-                // }
-
-                string response = carServerController.HandleClientCommand(message.Item2);
-                _responseQueue.Enqueue((message.Item1, response));
+                if (_clientDictionary.TryGetValue(message.Item1, out CarServerController carServerController))
+                {
+                    string response = carServerController.HandleClientCommand(message.Item2);
+                    _responseQueue.Enqueue((message.Item1, response));
+                }
             }
 
         while (_responseQueue.Count > 0)
@@ -82,10 +77,10 @@ public class TcpServer : MonoBehaviour
             Debug.Log("TCP Server stopped.");
         }
 
-        foreach ((TcpClient client, CarServerController _) in _connectedClients)
+        foreach (var client in _clientDictionary)
         {
-            Debug.Log("Closing client connection: " + client.Client.RemoteEndPoint);
-            client.Close();
+            Debug.Log("Closing client connection: " + client.Key.Client.RemoteEndPoint);
+            client.Key.Close();
         }
     }
 
@@ -119,11 +114,11 @@ public class TcpServer : MonoBehaviour
                 }
 
         CarServerController carsController = newGo.GetComponent<CarServerController>();
-        carsController.CarIndex = _connectedClients.Count;
+        carsController.CarIndex = _clientDictionary.Count;
         carsController.canvas = canvas;
         carsController.startPosition = startPosition;
         carsController.trackDropDown = trackDropDown; 
-        _connectedClients.Add((tcpClient, carsController));
+        _clientDictionary.TryAdd(tcpClient, carsController);
         for (int i = 0; i < newGo.transform.childCount; i++)
             foreach (Camera myCamera in newGo.transform.GetChild(i).GetComponents<Camera>())
                 viewDropDown.AddCamera(myCamera, carsController.CarIndex);
@@ -224,23 +219,22 @@ public class TcpServer : MonoBehaviour
 
     public void BroadcastMessageEveryone(string message)
     {
-        for (int i = _connectedClients.Count - 1; i >= 0; i--)
+        foreach (var client in _clientDictionary)
         {
-            TcpClient client = _connectedClients[i].Item1;
-            BroadcastMessage(message, client);
+            BroadcastMessage(message, client.Key);
         }
     }
 
     private void RemoveClient(TcpClient tcpClient)
     {
-        (TcpClient, CarServerController) client = _connectedClients.Find(client => client.Item1 == tcpClient);
-        if (client == default((TcpClient, CarServerController))) return;
+        CarServerController carServerController;
+        if (!_clientDictionary.TryGetValue(tcpClient, out carServerController)) return;
 
-        GameObject go = client.Item2.gameObject;
+        GameObject go = carServerController.gameObject;
         for (int i = 0; i < go.transform.childCount; i++)
             foreach (Camera myCamera in go.transform.GetChild(i).GetComponents<Camera>())
-                viewDropDown.RemoveCamera(myCamera, client.Item2.CarIndex);
-        _connectedClients.RemoveAt(_connectedClients.FindIndex(tuple => tuple.Item1 == tcpClient));
+                viewDropDown.RemoveCamera(myCamera, carServerController.CarIndex);
+        _clientDictionary.Remove(tcpClient);
         lapManager.RemoveCar(go);
         Destroy(go);
     }

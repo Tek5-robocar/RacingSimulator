@@ -1,28 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class LapManager : MonoBehaviour
+public class CentraleLine : MonoBehaviour
 {
-    // could handle timers
-    public Transform start;
-    public Transform end;
-
     private readonly List<GameObject> _cars = new();
-
     private LineRenderer _centralLine;
 
     private int _numberCollider = 0;
     private GameObject _track;
-    private List<BoxCollider> _trackPartsCheckpoints = new();
-
-    private void Start()
-    {
-    }
-
-
-    private void Update()
-    {
-    }
 
     public void AddCar(GameObject car)
     {
@@ -117,6 +102,7 @@ public class LapManager : MonoBehaviour
 
         _centralLine = part.AddComponent<LineRenderer>();
         _centralLine.positionCount = associatedPoints.Count;
+        _centralLine.widthMultiplier = 0f;
 
         for (int i = 0; i < associatedPoints.Count; i++)
         {
@@ -130,6 +116,7 @@ public class LapManager : MonoBehaviour
 
         LineRendererColliderGenerator linesColliders = part.AddComponent<LineRendererColliderGenerator>();
         linesColliders.ColliderWidth = 15f;
+        
         linesColliders.OnStartFinished += () =>
         {
             foreach (BoxCollider boxCollider in linesColliders.GetColliders())

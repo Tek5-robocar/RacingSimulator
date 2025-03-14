@@ -432,6 +432,10 @@ PrefabInstance:
       value: prop_startline
       objectReference: {fileID: 0}
     - target: {fileID: 5244926481502043661, guid: 0ac7649b22d33864c9cf79c3ba4b3456, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5244926481502043661, guid: 0ac7649b22d33864c9cf79c3ba4b3456, type: 3}
       propertyPath: m_TagString
       value: Finish
       objectReference: {fileID: 0}
@@ -443,52 +447,6 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 2012324839}
   m_SourcePrefab: {fileID: 100100000, guid: 0ac7649b22d33864c9cf79c3ba4b3456, type: 3}
---- !u!1 &610993030
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 610993032}
-  - component: {fileID: 610993031}
-  m_Layer: 0
-  m_Name: LapManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &610993031
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 610993030}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c175ad1e5b2a1dce80a61ffb594f0ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  start: {fileID: 1063583566}
-  end: {fileID: 1063583566}
---- !u!4 &610993032
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 610993030}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -10.434087, y: -26.901918, z: -26.894764}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &753906255 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7576198334888635861, guid: 144b9ec4dce2a11d8941d3fefe5aafb2, type: 3}
@@ -851,7 +809,7 @@ MonoBehaviour:
   trackDropDown: {fileID: 5802370636398181315}
   startPosition: {fileID: 1063583566}
   canvas: {fileID: 388971503696128239}
-  lapManager: {fileID: 610993031}
+  lapManager: {fileID: 7289300136854224466}
 --- !u!4 &1751518301
 Transform:
   m_ObjectHideFlags: 0
@@ -1913,6 +1871,7 @@ GameObject:
   - component: {fileID: 7099693824513054343}
   - component: {fileID: 6051364584000363772}
   - component: {fileID: 5802370636398181315}
+  - component: {fileID: 7289300136854224466}
   m_Layer: 5
   m_Name: TrackDropDown
   m_TagString: Untagged
@@ -3082,7 +3041,7 @@ MonoBehaviour:
   - {fileID: 765712243}
   - {fileID: 753906255}
   agents: {fileID: 145996326}
-  lapManager: {fileID: 610993031}
+  lapManager: {fileID: 7289300136854224466}
   bestScoreText: {fileID: 1627665651}
 --- !u!224 &5849791106831375438
 RectTransform:
@@ -3739,6 +3698,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1936330326675253791}
   m_CullTransparentMesh: 1
+--- !u!114 &7289300136854224466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1936330326675253791}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c175ad1e5b2a1dce80a61ffb594f0ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &7388757692960018452
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4602,4 +4573,3 @@ SceneRoots:
   - {fileID: 1751518301}
   - {fileID: 852261597}
   - {fileID: 509124669}
-  - {fileID: 610993032}

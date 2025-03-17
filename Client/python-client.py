@@ -117,37 +117,33 @@ def update_key_values():
 def get_infos_raycast(client, steering_left, steering_right):
     global it
     x = send_command_to_unity(client, 'GET_INFOS_RAYCAST')
-    x = x.split(';')[0]
-    print("x:")
-    print(x)
-    x_splitted = x.split(':')
-    print('x splitted:')
-    print(x_splitted)
-    if x_splitted[0] == 'KO':
-        return
-    x = [elem[:3] for elem in x_splitted[2:]]
-    file_exists = os.path.exists(csv_file)
-    file_empty = os.path.getsize(csv_file) == 0 if file_exists else True
-    try:
-        if steering_left > 0.75:
-            x.append('left')
-        elif steering_left > 0.25:
-            x.append('diagonal left')
-        elif steering_right > 0.75:
-            x.append('right')
-        elif steering_right > 0.25:
-            x.append('diagonal right')
-        else:
-            x.append('center')
-        lidar_data = pd.DataFrame([x], columns=columns)
-        if file_empty:
-            lidar_data.to_csv(csv_file, mode='w', header=True, index=False)  # Write with header
-        else:
-            lidar_data.to_csv(csv_file, mode='a', header=False, index=False)  # Append without header
-
-        it += 1
-    except Exception as e:
-        os.write(2, f"Error writing to CSV: {str(e)}\n".encode())
+    # x = x.split(';')[0]
+    # x_splitted = x.split(':')
+    # if x_splitted[0] == 'KO':
+    #     return
+    # x = [elem[:3] for elem in x_splitted[2:]]
+    # file_exists = os.path.exists(csv_file)
+    # file_empty = os.path.getsize(csv_file) == 0 if file_exists else True
+    # try:
+    #     if steering_left > 0.75:
+    #         x.append('left')
+    #     elif steering_left > 0.25:
+    #         x.append('diagonal left')
+    #     elif steering_right > 0.75:
+    #         x.append('right')
+    #     elif steering_right > 0.25:
+    #         x.append('diagonal right')
+    #     else:
+    #         x.append('center')
+    #     lidar_data = pd.DataFrame([x], columns=columns)
+    #     if file_empty:
+    #         lidar_data.to_csv(csv_file, mode='w', header=True, index=False)  # Write with header
+    #     else:
+    #         lidar_data.to_csv(csv_file, mode='a', header=False, index=False)  # Append without header
+    #
+    #     it += 1
+    # except Exception as e:
+    #     os.write(2, f"Error writing to CSV: {str(e)}\n".encode())
 
 
 def on_press(key):
@@ -201,7 +197,7 @@ def main():
 
     start_listener()
 
-    # if unity_process:
+    # if unity_process:z
     #     unity_process.terminate()
 
 

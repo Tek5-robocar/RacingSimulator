@@ -19,15 +19,10 @@ def get_numeric_steering(prediction: str) -> float:
     """
     Convert str prediction to numeric value for steering
     """
-    steering = 0
-    if prediction == 'left':
-        steering = -1
-    if prediction == 'diagonal left':
-        steering = -0.5
-    if prediction == 'right':
-        steering = 1
-    if prediction == 'diagonal right':
-        steering = 0.5
+    print('get_numeric_steering')
+    print(steering_map[prediction[0]])
+    steering = sum(steering_map[prediction[0]]) / 2
+    print(steering)
     return steering
 
 
@@ -62,14 +57,14 @@ def loop(rf_model, client):
 
 def main():
     unity_process = subprocess.Popen([config.get('unity', 'env_path')])
-    time.sleep(5)
+    time.sleep(10)
 
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
         client.connect((HOST, PORT))
         print('Connexion vers ' + HOST + ':' + str(PORT) + ' réussie.')
-        with open('random_forest_model2.pkl', 'rb') as f:
+        with open('random_forest_model1.pkl', 'rb') as f:
             rf_model = pickle.load(f)
         loop(rf_model, client)
 
@@ -83,6 +78,48 @@ def main():
 
 
 if __name__ == '__main__':
+    steering_map = {
+        "left_19": (-1.0, -0.95),
+        "left_18": (-0.95, -0.9),
+        "left_17": (-0.9, -0.85),
+        "left_16": (-0.85, -0.8),
+        "left_15": (-0.8, -0.75),
+        "left_14": (-0.75, -0.7),
+        "left_13": (-0.7, -0.65),
+        "left_12": (-0.65, -0.6),
+        "left_11": (-0.6, -0.55),
+        "left_10": (-0.55, -0.5),
+        "left_9": (-0.5, -0.45),
+        "left_8": (-0.45, -0.4),
+        "left_7": (-0.4, -0.35),
+        "left_6": (-0.35, -0.3),
+        "left_5": (-0.3, -0.25),
+        "left_4": (-0.25, -0.2),
+        "left_3": (-0.2, -0.15),
+        "left_2": (-0.15, -0.1),
+        "left_1": (-0.1, -0.05),
+        "center": (-0.05, 0.05),
+        "right_1": (0.05, 0.1),
+        "right_2": (0.1, 0.15),
+        "right_3": (0.15, 0.2),
+        "right_4": (0.2, 0.25),
+        "right_5": (0.25, 0.3),
+        "right_6": (0.3, 0.35),
+        "right_7": (0.35, 0.4),
+        "right_8": (0.4, 0.45),
+        "right_9": (0.45, 0.5),
+        "right_10": (0.5, 0.55),
+        "right_11": (0.55, 0.6),
+        "right_12": (0.6, 0.65),
+        "right_13": (0.65, 0.7),
+        "right_14": (0.7, 0.75),
+        "right_15": (0.75, 0.8),
+        "right_16": (0.8, 0.85),
+        "right_17": (0.85, 0.9),
+        "right_18": (0.9, 0.95),
+        "right_19": (0.95, 1.0)
+    }
+
     config = load_config('config.ini')
     HOST = '0.0.0.0'  # Server IP
     PORT = 8085  # Server Port

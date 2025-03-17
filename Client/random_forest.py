@@ -27,7 +27,7 @@ def evaluate(rf_model, x_test, y_test):
     print("Accuracy:", accuracy_score(y_test, y_pred))
     if accuracy_score(y_test, y_pred) > 0.7:
         import pickle
-        with open('random_forest_model2.pkl', 'wb') as f:
+        with open('random_forest_model1.pkl', 'wb') as f:
             pickle.dump(rf_model, f)
     print("\nClassification Report:\n", classification_report(y_test, y_pred))
     feature_importance = rf_model.feature_importances_

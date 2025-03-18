@@ -6,12 +6,12 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class TcpServer : MonoBehaviour
 {
+    private const int Port = 8085;
     public GameObject agents;
     public GameObject agentPrefab;
     public ViewDropDown viewDropDown;
@@ -20,51 +20,64 @@ public class TcpServer : MonoBehaviour
     public GameObject canvas;
     public CentraleLine lapManager;
     
-    private readonly ConcurrentQueue<TcpClient> _addClientQueue = new();
-    private readonly string _folderPath = Path.Combine("CarMaterialVariation");
-    private readonly ConcurrentQueue<(TcpClient, string)> _messageQueue = new();
-
-    private const int Port = 8085;
-    private readonly ConcurrentQueue<TcpClient> _removeClientQueue = new();
-    private readonly ConcurrentQueue<(TcpClient, string)> _responseQueue = new();
-
     private Thread _broadcastThread;
-
     private bool _isServerRunning;
     private Material[] _materials;
     private TcpListener _tcpListener;
-    private readonly Dictionary<TcpClient, CarServerController> _clientDictionary = new();
+    private readonly TcpClient _client;
+    private static int _nbCars = 1;
+    private static int _fov = 110;
+    private static int _nbRay = 10;
+    private readonly string _folderPath = Path.Combine("CarMaterialVariation");
+    private readonly ConcurrentQueue<Action> _mainThreadActions = new ConcurrentQueue<Action>();
+    private readonly Dictionary<string, Action<string>> _commands = new Dictionary<string, Action<string>>()
+    {
+        {"NB_AGENT", (value) =>
+        {
+            if (int.TryParse(value, out int nbAgent))
+            {
+                if (nbAgent > 0)
+                {
+                    _nbCars = nbAgent;
+                }
+            }
+        }},
+        {"FOV", (value) =>
+        {
+            if (int.TryParse(value, out int fov))
+            {
+                if (fov is > 1 and < 180)
+                {
+                    _fov = fov;
+                }
+            }
+        }},
+        {"NB_RAY", (value) =>
+        {
+            if (int.TryParse(value, out int nbRay))
+            {
+                if (nbRay is > 1 and < 50)
+                {
+                    _nbRay = nbRay;
+                }
+            }
+        }},
+    };
+
+    
 
     private void Start()
     {
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = -1;
         StartServer();
         _materials = Resources.LoadAll<Material>(_folderPath);
     }
 
     private void Update()
     {
-        while (_addClientQueue.Count > 0)
-            if (_addClientQueue.TryDequeue(out TcpClient tcpClient))
-                AddClient(tcpClient);
-
-        while (_removeClientQueue.Count > 0)
-            if (_removeClientQueue.TryDequeue(out TcpClient client))
-                RemoveClient(client);
-
-        while (_messageQueue.Count > 0)
-            if (_messageQueue.TryDequeue(out (TcpClient, string) message))
-            {
-                if (_clientDictionary.TryGetValue(message.Item1, out CarServerController carServerController))
-                {
-                    string response = carServerController.HandleClientCommand(message.Item2);
-                    _responseQueue.Enqueue((message.Item1, response));
-                }
-            }
-
-        while (_responseQueue.Count > 0)
-            if (_responseQueue.TryDequeue(out (TcpClient, string) response))
-                if (response.Item1 != null)
-                    BroadcastMessage(response.Item2, response.Item1);
+        while(_mainThreadActions.TryDequeue(out var action))
+            action();
     }
 
     private void OnApplicationQuit()
@@ -77,50 +90,34 @@ public class TcpServer : MonoBehaviour
             Debug.Log("TCP Server stopped.");
         }
 
-        foreach (var client in _clientDictionary)
-        {
-            Debug.Log("Closing client connection: " + client.Key.Client.RemoteEndPoint);
-            client.Key.Close();
-        }
-    }
-
-    private List<(TcpClient, string)> GroupResponseByClient()
-    {
-        List<(TcpClient, string)> groupedResponses = new();
-        while (_responseQueue.TryDequeue(out (TcpClient, string) response))
-        {
-            (TcpClient, string) groupedResponse = groupedResponses.Find(x => x.Item1 == response.Item1);
-            if (groupedResponse != default((TcpClient, string)))
-                groupedResponse.Item2 += ";" + response.Item2;
-            else
-                groupedResponses.Add(response);
-        }
-
-        return groupedResponses;
+        Debug.Log("Closing client connection: " + _client.Client.RemoteEndPoint);
+        _client.Close();
     }
 
     private void AddClient(TcpClient tcpClient)
     {
-        GameObject newGo = Instantiate(agentPrefab, agents.transform, true);
+        var newGo = Instantiate(agentPrefab, agents.transform, true);
         newGo.transform.position = startPosition.position;
         if (_materials.Length > 0)
-            for (int i = 0; i < newGo.transform.childCount; i++)
+            for (var i = 0; i < newGo.transform.childCount; i++)
                 if (newGo.transform.GetChild(i).name == "Body")
                 {
-                    Material randomMaterial = _materials[Random.Range(0, _materials.Length)];
-                    Material[] tempMaterials = newGo.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().materials;
+                    var randomMaterial = _materials[Random.Range(0, _materials.Length)];
+                    var tempMaterials = newGo.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().materials;
                     tempMaterials[0] = randomMaterial;
                     newGo.transform.GetChild(i).gameObject.GetComponent<MeshRenderer>().materials = tempMaterials;
                 }
 
-        CarServerController carsController = newGo.GetComponent<CarServerController>();
-        carsController.CarIndex = _clientDictionary.Count;
+        var carsController = newGo.GetComponent<CarContinuousController>();
+        Debug.Log($"setting car index to {_nbCars}, fov to {_fov} and nbRay to {_nbRay}");
+        carsController.CarIndex = _nbCars-- - 1;
+        carsController.Fov = _fov;
+        carsController.NbRay = _nbRay;
         carsController.canvas = canvas;
         carsController.startPosition = startPosition;
-        carsController.trackDropDown = trackDropDown; 
-        _clientDictionary.TryAdd(tcpClient, carsController);
-        for (int i = 0; i < newGo.transform.childCount; i++)
-            foreach (Camera myCamera in newGo.transform.GetChild(i).GetComponents<Camera>())
+        carsController.trackDropDown = trackDropDown;
+        for (var i = 0; i < newGo.transform.childCount; i++)
+            foreach (var myCamera in newGo.transform.GetChild(i).GetComponents<Camera>())
                 viewDropDown.AddCamera(myCamera, carsController.CarIndex);
 
         lapManager.AddCar(newGo);
@@ -147,15 +144,12 @@ public class TcpServer : MonoBehaviour
     {
         try
         {
-            TcpClient tcpClient = _tcpListener.EndAcceptTcpClient(result);
+            var tcpClient = _tcpListener.EndAcceptTcpClient(result);
             Debug.Log("Client connected from: " + tcpClient.Client.RemoteEndPoint);
 
-            _addClientQueue.Enqueue(tcpClient);
-
-            NetworkStream networkStream = tcpClient.GetStream();
-            byte[] buffer = new byte[1024];
+            var networkStream = tcpClient.GetStream();
+            var buffer = new byte[1024];
             networkStream.BeginRead(buffer, 0, buffer.Length, OnDataReceived, new ConnectionState(tcpClient, buffer));
-
             _tcpListener.BeginAcceptTcpClient(OnClientConnected, null);
         }
         catch (Exception ex)
@@ -165,29 +159,45 @@ public class TcpServer : MonoBehaviour
         }
     }
 
+    private void ExtractInfoFromMessage(string message)
+    {
+        string[] splitedMessage =  message.Split(new char[] { ';' });
+
+        foreach (string part in splitedMessage)
+        {
+            string[] subPart = part.Split(new char[] { ':' });
+
+            if (_commands.TryGetValue(subPart[0], out var action))
+            {
+                action(subPart[1]);
+            }
+        } 
+    }
+
     private void OnDataReceived(IAsyncResult result)
     {
-        ConnectionState state = (ConnectionState)result.AsyncState;
-        TcpClient tcpClient = state.TcpClient;
+        var state = (ConnectionState)result.AsyncState;
+        var tcpClient = state.TcpClient;
         try
         {
-            byte[] buffer = state.Buffer;
+            var buffer = state.Buffer;
 
-            NetworkStream networkStream = tcpClient.GetStream();
-            int bytesRead = networkStream.EndRead(result);
+            var networkStream = tcpClient.GetStream();
+            var bytesRead = networkStream.EndRead(result);
 
             if (bytesRead > 0)
             {
-                string message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                _messageQueue.Enqueue((tcpClient, message));
-
-                networkStream.BeginRead(buffer, 0, buffer.Length, OnDataReceived, state);
+                var message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+                ExtractInfoFromMessage(message);
+                for (int i = 0; i < _nbCars; i++)
+                {
+                    _mainThreadActions.Enqueue(() => AddClient(tcpClient));
+                }
             }
             else
             {
                 Debug.Log("Client disconnected: " + tcpClient.Client.RemoteEndPoint);
                 tcpClient.Close();
-                _removeClientQueue.Enqueue(tcpClient);
             }
         }
         catch (Exception ex)
@@ -195,48 +205,7 @@ public class TcpServer : MonoBehaviour
             Debug.LogError("Error receiving data: " + ex.Message);
             Debug.Log("Client disconnected: " + tcpClient.Client.RemoteEndPoint);
             tcpClient.Close();
-            _removeClientQueue.Enqueue(tcpClient);
         }
-    }
-
-    public void BroadcastMessage(string message, TcpClient tcpClient)
-    {
-        byte[] data = Encoding.ASCII.GetBytes(message);
-
-        try
-        {
-            NetworkStream stream = tcpClient.GetStream();
-            if (stream.CanWrite) stream.Write(data, 0, data.Length);
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError("Error sending message to tcpClient: " + ex.Message);
-            _removeClientQueue.Enqueue(tcpClient);
-
-            tcpClient.Close();
-        }
-    }
-
-    public void BroadcastMessageEveryone(string message)
-    {
-        foreach (var client in _clientDictionary)
-        {
-            BroadcastMessage(message, client.Key);
-        }
-    }
-
-    private void RemoveClient(TcpClient tcpClient)
-    {
-        CarServerController carServerController;
-        if (!_clientDictionary.TryGetValue(tcpClient, out carServerController)) return;
-
-        GameObject go = carServerController.gameObject;
-        for (int i = 0; i < go.transform.childCount; i++)
-            foreach (Camera myCamera in go.transform.GetChild(i).GetComponents<Camera>())
-                viewDropDown.RemoveCamera(myCamera, carServerController.CarIndex);
-        _clientDictionary.Remove(tcpClient);
-        lapManager.RemoveCar(go);
-        Destroy(go);
     }
 
     private class ConnectionState

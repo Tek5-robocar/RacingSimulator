@@ -5,7 +5,7 @@ public class RenderTextureToString : MonoBehaviour
 {
     private static Texture2D _texture2D;
 
-    public static List<int> ConvertRenderTextureToFile(RenderTexture renderTexture, int numberRay, float fieldView)
+    public static List<int> GetRaycasts(RenderTexture renderTexture, int numberRay, float fieldView)
     {
         RenderTexture currentRT = RenderTexture.active;
         RenderTexture.active = renderTexture;

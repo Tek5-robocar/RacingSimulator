@@ -2,22 +2,25 @@ using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using TMPro;
+using Unity.MLAgents;
+using Unity.MLAgents.Actuators;
+using Unity.MLAgents.Policies;
+using Unity.MLAgents.Sensors;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class CarServerController : MonoBehaviour
+public class CarContinuousController : Agent
 {
     public CarController carController;
     public Camera carVisionCamera;
     public GameObject canvas;
     public Transform startPosition;
     public TrackDropDown trackDropDown;
+    public BehaviorParameters  behaviorParameters;
     
     private readonly Dictionary<string, Func<float, string>> _floatActions;
     private readonly Dictionary<string, Func<string>> _voidActions;
-    private float _fov = 180;
     private bool _isRunning;
-    private int _numberRay = 10;
     private RenderTexture _renderTexture;
     private TcpListener _server;
     private TextMeshProUGUI _textMesh;
@@ -25,109 +28,19 @@ public class CarServerController : MonoBehaviour
     private float _timer;
     private readonly List<string> _touchedCheckpoints = new();
 
-    public CarServerController()
-    {
-        _floatActions = new Dictionary<string, Func<float, string>>
-        {
-            {
-                "SET_SPEED", speed =>
-                {
-                    if (speed > 1 || speed < -1) return "KO:SET_SPEED";
-                    carController?.Move(speed);
-                    return "OK:SET_SPEED";
-                }
-            },
-            {
-                "SET_STEERING", steering =>
-                {
-                    if (steering > 1 || steering < -1) return "KO:SET_STEERING";
-                    carController?.Turn(steering);
-                    return "OK:SET_STEERING";
-                }
-            },
-            {
-                "SET_NUMBER_RAY", numberRay =>
-                {
-                    if (numberRay < 1 || numberRay > 50) return "KO:SET_NUMBER_RAY";
-                    this._numberRay = (int)numberRay;
-                    return "OK:SET_NUMBER_RAY";
-                }
-            },
-            {
-                "SET_FOV", fov =>
-                {
-                    if (fov < 1 || fov > 180) return "KO:SET_FOV";
-                    this._fov = fov;
-                    return "OK:SET_FOV";
-                }
-            }
-        };
-
-        _voidActions = new Dictionary<string, Func<string>>
-        {
-            {
-                "GET_SPEED", () =>
-                {
-                    float? speed = carController?.Speed();
-                    if (!speed.HasValue) return "KO:GET_SPEED";
-
-                    return "OK:GET_SPEED:" + speed.Value.ToString("0.00");
-                }
-            },
-            {
-                "GET_STEERING", () =>
-                {
-                    float? steering = carController?.Steering();
-                    if (!steering.HasValue) return "KO:GET_STEERING";
-
-                    return "OK:GET_STEERING:" + steering.Value.ToString("0.00");
-                }
-            },
-            {
-                "GET_INFOS_RAYCAST", () =>
-                {
-                    List<int> distance = RenderTextureToString.GetRaycasts(carVisionCamera.targetTexture, _numberRay, _fov);
-                    if (distance.Count == _numberRay)
-                    {
-                        string buffer = "OK:GET_INFOS_RAYCAST";
-                        foreach (int distanceToLine in distance)
-                        {
-                            buffer += ":";
-                            buffer += distanceToLine.ToString("0.00");
-                        }
-
-                        return buffer;
-                    }
-
-                    return "KO:GET_INFOS_RAYCAST";
-                }
-            },
-            {
-                "END_SIMULATION", () =>
-                {
-                    Application.Quit();
-                    return "OK:END_SIMULATION";
-                }
-            },
-            {
-                "GET_POSITION", () =>
-                {
-                    Vector3 position = transform.position;
-                    return $"OK:GET_POSITION:{position.x:0.00}:{position.y:0.00}:{position.z:0.00}";
-                }
-            }
-            // { "SET_RANDOM_POSITION", () =>
-            // {
-            //     ResetCarPosition();
-            //     Vector3 position = transform.position;
-            //     return $"OK:SET_RANDOM_POSITION:{position.x:0.00}:{position.y:0.00}:{position.z:0.00}";
-            // } },
-        };
-    }
-
     public int NumberCollider { get; set; }
-
-    public int CarIndex { get; set; }
+    public int Fov { get; set; }
+    public int NbRay { get; set; }
+    
+    public int CarIndex
+    {
+        get => behaviorParameters.TeamId;
+        set
+        {
+            behaviorParameters.BehaviorName += value;
+            behaviorParameters.TeamId = value;
+        }
+    }
 
     private void Start()
     {
@@ -142,13 +55,12 @@ public class CarServerController : MonoBehaviour
         _textMesh = _textMeshGo.AddComponent<TextMeshProUGUI>();
         _textMesh.enableAutoSizing = true;
         _textMesh.color = Color.black;
+        behaviorParameters.BrainParameters.VectorObservationSize = NbRay;
     }
 
     private void Update()
     {
         UpdateTimer();
-        // carController.Move(Input.GetAxis("Vertical"));
-        // carController.Turn(Input.GetAxis("Horizontal"));
     }
 
     private void FixedUpdate()
@@ -186,7 +98,7 @@ public class CarServerController : MonoBehaviour
     }
 
 
-    ~CarServerController()
+    ~CarContinuousController()
     {
         Destroy(_textMeshGo);
         Destroy(_textMesh);
@@ -237,6 +149,50 @@ public class CarServerController : MonoBehaviour
     private void UpdateTimer()
     {
         _timer += Time.deltaTime;
-        _textMesh.text = string.Format($"Agent {CarIndex}: {_timer:00}");
+        int minute =  Mathf.FloorToInt(_timer / 60);
+        int second = Mathf.FloorToInt(_timer % 60);
+        _textMesh.text = string.Format($"Agent {CarIndex}: {minute:00}:{second:00}");
     }
+    
+    public override void OnActionReceived(ActionBuffers actionBuffers)
+    {
+        var throttle = actionBuffers.ContinuousActions[0]; // Throttle (forward/backward)
+        var steering = actionBuffers.ContinuousActions[1]; // Steering (left/right)
+        Debug.Log($"throttle: {throttle}\nsteering: {steering}");
+        carController.Move(throttle);
+        carController.Turn(steering);
+    }
+
+    public override void OnEpisodeBegin()
+    {
+        ResetCarPosition();
+    }
+    
+    public override void CollectObservations(VectorSensor sensor)
+    {
+        // float posReward = (6f - this.signedDistance.ComputeSignedDistanceToCenterLine()) / 6f;
+        // // float speedReward = carController.Speed() / carController.maxSpeed;
+        // float tangentReward = this.signedDistance.ComputeTangentToCenterLine();
+        //
+        // // Debug.Log($"kpos reward: {posReward}, kspeed reward: {_lastSpeedValue}  tangent reward: {tangentReward}");
+        // float reward = kPos * posReward + kSpeed * _lastSpeedValue + kTangent * tangentReward;
+        // AddReward(reward);
+        //
+        // List<(Mask.CollideRegion, float)> distanceToLines = Mask.GetDistancesToLines(300, carCamera, insideLayer, outsideLayer, numberRay, 100);
+        //
+        // // sensor.AddObservation(carController.Speed() / carController.maxSpeed);
+        // foreach ((Mask.CollideRegion region, float distance) in distanceToLines)
+        // {
+        //     // sensor.AddObservation((int)region);
+        //     sensor.AddObservation(distance);
+        // }
+    }
+
+    // public override void Heuristic(in ActionBuffers actionsOut)
+    // {
+        // var continuousActions = actionsOut.ContinuousActions;
+
+        // continuousActions[0] = Input.GetAxis("Vertical");
+        // continuousActions[1] = Input.GetAxis("Horizontal");
+    // }
 }

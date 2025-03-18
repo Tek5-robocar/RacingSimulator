@@ -116,7 +116,7 @@ def update_key_values():
 
 def get_infos_raycast(client, steering_left, steering_right):
     global it
-    x = send_command_to_unity(client, 'GET_INFOS_RAYCAST')
+    # x = send_command_to_unity(client, 'GET_INFOS_RAYCAST')
     # x = x.split(';')[0]
     # x_splitted = x.split(':')
     # if x_splitted[0] == 'KO':

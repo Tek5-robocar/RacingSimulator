@@ -12,7 +12,7 @@ public class CentraleLine : MonoBehaviour
     public void AddCar(GameObject car)
     {
         _cars.Add(car);
-        CarServerController carController = car.GetComponent<CarServerController>();
+        CarContinuousController carController = car.GetComponent<CarContinuousController>();
         carController.NumberCollider = _numberCollider;
     }
 
@@ -124,7 +124,7 @@ public class CentraleLine : MonoBehaviour
                 _numberCollider++;
                 foreach (GameObject car in _cars)
                 {
-                    CarServerController carController = car.GetComponent<CarServerController>();
+                    CarContinuousController carController = car.GetComponent<CarContinuousController>();
                     carController.NumberCollider = _numberCollider;
                 }
                 boxCollider.name = $"checkpoint_{_numberCollider}";
@@ -146,7 +146,7 @@ public class CentraleLine : MonoBehaviour
         _numberCollider = 0;
         foreach (GameObject car in _cars)
         {
-            CarServerController carController = car.GetComponent<CarServerController>();
+            CarContinuousController carController = car.GetComponent<CarContinuousController>();
             carController.NumberCollider = -1;
         }
         this._track = track;

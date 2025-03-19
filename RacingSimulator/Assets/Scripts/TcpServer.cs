@@ -173,25 +173,19 @@ public class TcpServer : MonoBehaviour
         public AgentConfig[] agents;
     }
 
-    private void ExtractInfoFromMessage(string message)
+    private bool ExtractInfoFromMessage(string message)
     {
         Debug.Log($"ExtractInfoFromMessage: {message}");
         _content = JsonUtility.FromJson<AgentsConfig>(message);
 
-        // Access the data
-        foreach (var agent in _content.agents)
+        foreach (AgentConfig agent in _content.agents)
         {
-            Debug.Log($"Fov: {agent.fov}, NbRay: {agent.nbRay}");
+            if (agent.fov <= 0 || agent.fov > 180 || agent.nbRay <= 0 || agent.nbRay > 50)
+            {
+                return false;
+            }
         }
-        // foreach (string part in splitedMessage)
-        // {
-            // string[] subPart = part.Split(new char[] { ':' });
-
-            // if (_commands.TryGetValue(subPart[0], out var action))
-            // {
-                // action(subPart[1]);
-            // }
-        // } 
+        return true;
     }
 
     private void OnDataReceived(IAsyncResult result)
@@ -208,11 +202,17 @@ public class TcpServer : MonoBehaviour
             if (bytesRead > 0)
             {
                 var message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                ExtractInfoFromMessage(message);
-                for (int i = 0; i < _content.agents.Length; i++)
+                if (!ExtractInfoFromMessage(message))
                 {
-                    var i1 = i;
-                    _mainThreadActions.Enqueue(() => AddClient(i1));
+                    Debug.LogError("wrong message");
+                    BroadcastMessage("wrong message", tcpClient);
+                } else
+                {
+                    for (int i = 0; i < _content.agents.Length; i++)
+                    {
+                        var i1 = i;
+                        _mainThreadActions.Enqueue(() => AddClient(i1));
+                    }
                 }
             }
             else

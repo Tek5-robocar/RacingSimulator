@@ -1,6 +1,10 @@
+import csv
 import json
+import os
+import pickle
 import socket
 import threading
+from keyword import iskeyword
 
 from mlagents_envs.environment import UnityEnvironment
 from mlagents_envs.base_env import ActionTuple
@@ -9,6 +13,8 @@ from pynput import keyboard
 
 from mlagents_envs.side_channel.engine_configuration_channel import EngineConfigurationChannel
 
+from utils import load_config
+
 
 def start_agents(host='127.0.0.1', port=12345):
     """Connect to TCP server and retrieve worker ID"""
@@ -16,9 +22,13 @@ def start_agents(host='127.0.0.1', port=12345):
         s.connect((host, port))
         infos = {
             'agents': [
+                # {
+                #     'fov': 180,
+                #     'nbRay': 20
+                # },
                 {
                     'fov': 180,
-                    'nbRay': 20
+                    'nbRay': 15
                 },
             ]
         }
@@ -26,8 +36,6 @@ def start_agents(host='127.0.0.1', port=12345):
 
 
 def on_press(key):
-    global current_speed
-    global current_steer
     try:
         if hasattr(key, 'char') and key.char in keys.keys():
             keys[key.char] = True
@@ -42,6 +50,7 @@ def on_press(key):
     except Exception as e:
         print(f"Error in on_press: {e}")
 
+
 def on_release(key):
     try:
         if hasattr(key, 'char') and key.char in keys.keys():
@@ -50,9 +59,45 @@ def on_release(key):
         print(f"Error in on_release: {e}")
 
 
-def update_key_values():
-    global current_speed
-    global current_steer
+def ai_controller(rf_model, state):
+    float_arr = [(float(elem) - min_value) / (max_value - min_value) for elem in state]
+    prediction = rf_model.predict(np.array([float_arr]))
+    return 0.5, get_numeric_steering(prediction)
+
+
+def keyboard_controller(current_speed, current_steer):
+    if keys['z']:
+        current_speed = MAX_SPEED
+    elif keys['s']:
+        current_speed = 0
+    else:
+        current_speed -= 1 if current_speed > 0 else 0
+
+    if keys['q']:
+        current_steer -= STEERING_OFFSET if current_steer > -MAX_STEERING else 0
+    elif keys['d']:
+        current_steer += STEERING_OFFSET if current_steer < MAX_STEERING else 0
+    else:
+        current_steer = 0
+    return current_speed, current_steer
+
+
+def get_numeric_steering(prediction: str) -> float:
+    steering = sum(steering_map[prediction[0]]) / 2
+    return steering
+
+
+def append_to_csv(row):
+    file_exists = os.path.isfile(file_path) and os.path.getsize(file_path) > 0
+
+    with open(file_path, mode='a', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        if not file_exists:
+            writer.writerow(headers)
+        writer.writerow(row)
+
+
+def mlagent_controller():
     TCP_HOST = '0.0.0.0'
     TCP_PORT = 8085
     try:
@@ -65,60 +110,60 @@ def update_key_values():
         )
         env.reset()
 
-        # Get all behavior names (e.g., ['Agent0?team=0', 'Agent1?team=0'])
         behavior_names = list(env.behavior_specs.keys())
         print(f"Agent behaviors: {behavior_names}")
-
+        behavior_names = [(behavior_names[i], 0, 0, keyboard_agent[i]) for i in range(len(behavior_names))]
+        with open('random_forest_model.pkl', 'rb') as f:
+            rf_model = pickle.load(f)
         try:
             while True:
-                # Generate action based on keyboard input
-                if keys['z']:
-                    current_speed = max_speed
-                elif keys['s']:
-                    current_speed = 0
-                else:
-                    current_speed -= 1 if current_speed > 0 else 0
+                for i in range(len(behavior_names)):
+                    behavior_name, current_speed, current_steer, is_keyboard = behavior_names[i]
 
-                if keys['q']:
-                    current_steer -= 1 if current_steer > -max_steering else 0
-                elif keys['d']:
-                    current_steer += 1 if current_steer < max_steering else 0
-                else:
-                    current_steer = 0  # Reset steering when no key is pressed
+                    decision_steps, terminal_steps = env.get_steps(behavior_name)
+                    if len(decision_steps.obs) == 0:
+                        break
+                    state = decision_steps.obs[0]
+                    reward = decision_steps.reward[0]
+                    done = len(terminal_steps) > 0
 
-                # Create the action tuple
-                action = ActionTuple()
-                continuous_action = np.array(
-                    [[current_speed / 10, current_steer / 10]],
-                    dtype=np.float32
-                )
-                action.add_continuous(continuous_action)
+                    if is_keyboard:
+                        current_speed, current_steer = keyboard_controller(current_speed, current_steer)
+                        # for steering in steering_map:
+                        #     if steering_map[steering][0] * 10 <= current_steer <= steering_map[steering][1] * 10:
+                        #         append_to_csv([str(nb) for nb in state[0]] + [steering] + [str(current_steer / 10)])
+                        #         break
+                    else:
+                        current_speed, current_steer = ai_controller(rf_model, state[0,:10])
+                        current_steer *= 10
+                        current_speed *= 10
 
-                # Send action to ALL agents across all behaviors
-                for behavior_name in behavior_names:
-                    # Get number of agents in this behavior group
+                    action = ActionTuple()
+                    continuous_action = np.array(
+                        [[current_speed / 10, current_steer / 10]],
+                        dtype=np.float32
+                    )
+
                     decision_steps, _ = env.get_steps(behavior_name)
                     num_agents = len(decision_steps.agent_id)
-
-                    # Repeat the action for all agents in this group
                     batch_action = ActionTuple()
                     batch_action.add_continuous(np.repeat(continuous_action, num_agents, axis=0))
-
                     env.set_actions(behavior_name, batch_action)
-
                 env.step()
 
         except KeyboardInterrupt:
             print("Interrupted by user")
     except Exception as e:
         print(f"Error: {str(e)}")
+        print(e.with_traceback())
     finally:
         if 'env' in locals():
             env.close()
         print("Connection closed")
 
+
 def main():
-    update_thread = threading.Thread(target=update_key_values, daemon=True)
+    update_thread = threading.Thread(target=mlagent_controller, daemon=True)
     update_thread.start()
     print("Connected to ML-Agents environment. Press:")
     print("- W to accelerate")
@@ -129,6 +174,48 @@ def main():
 
 
 if __name__ == "__main__":
+    steering_map = {
+        "left_19": (-1.0, -0.95),
+        "left_18": (-0.95, -0.9),
+        "left_17": (-0.9, -0.85),
+        "left_16": (-0.85, -0.8),
+        "left_15": (-0.8, -0.75),
+        "left_14": (-0.75, -0.7),
+        "left_13": (-0.7, -0.65),
+        "left_12": (-0.65, -0.6),
+        "left_11": (-0.6, -0.55),
+        "left_10": (-0.55, -0.5),
+        "left_9": (-0.5, -0.45),
+        "left_8": (-0.45, -0.4),
+        "left_7": (-0.4, -0.35),
+        "left_6": (-0.35, -0.3),
+        "left_5": (-0.3, -0.25),
+        "left_4": (-0.25, -0.2),
+        "left_3": (-0.2, -0.15),
+        "left_2": (-0.15, -0.1),
+        "left_1": (-0.1, -0.05),
+        "center": (-0.05, 0.05),
+        "right_1": (0.05, 0.1),
+        "right_2": (0.1, 0.15),
+        "right_3": (0.15, 0.2),
+        "right_4": (0.2, 0.25),
+        "right_5": (0.25, 0.3),
+        "right_6": (0.3, 0.35),
+        "right_7": (0.35, 0.4),
+        "right_8": (0.4, 0.45),
+        "right_9": (0.45, 0.5),
+        "right_10": (0.5, 0.55),
+        "right_11": (0.55, 0.6),
+        "right_12": (0.6, 0.65),
+        "right_13": (0.65, 0.7),
+        "right_14": (0.7, 0.75),
+        "right_15": (0.75, 0.8),
+        "right_16": (0.8, 0.85),
+        "right_17": (0.85, 0.9),
+        "right_18": (0.9, 0.95),
+        "right_19": (0.95, 1.0)
+    }
+
     keys = {
         'z': False,
         'q': False,
@@ -136,8 +223,17 @@ if __name__ == "__main__":
         'd': False
     }
 
-    max_speed = 10
-    max_steering = 10
-    current_speed = 0.0
-    current_steer = 0.0
+    MAX_SPEED = 10
+    MAX_STEERING = 10
+    STEERING_OFFSET = 2
+
+    keyboard_agent = [False]
+    config = load_config('config.ini')
+
+    file_path = config.get('DEFAULT', 'csv_path')
+    headers = ['ray_cast_1', 'ray_cast_2', 'ray_cast_3', 'ray_cast_4', 'ray_cast_5', 'ray_cast_6', 'ray_cast_7',
+               'ray_cast_8', 'ray_cast_9', 'ray_cast_10', 'steering_discrete', 'steering_continuous']
+    max_value = float(config.get('normalization', 'ray_value_max'))
+    min_value = float(config.get('normalization', 'ray_value_min'))
+
     main()

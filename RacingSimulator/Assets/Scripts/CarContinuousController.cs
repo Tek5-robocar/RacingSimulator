@@ -30,8 +30,9 @@ public class CarContinuousController : Agent
 
     public int NumberCollider { get; set; }
     public int Fov { get; set; }
+
     public int NbRay { get; set; }
-    
+
     public int CarIndex
     {
         get => behaviorParameters.TeamId;
@@ -55,7 +56,6 @@ public class CarContinuousController : Agent
         _textMesh = _textMeshGo.AddComponent<TextMeshProUGUI>();
         _textMesh.enableAutoSizing = true;
         _textMesh.color = Color.black;
-        behaviorParameters.BrainParameters.VectorObservationSize = NbRay;
     }
 
     private void Update()
@@ -104,38 +104,6 @@ public class CarContinuousController : Agent
         Destroy(_textMesh);
     }
 
-    public string HandleClientCommand(string message)
-    {
-        string stringResponse = "";
-        string[] commands = message.Split(';', StringSplitOptions.RemoveEmptyEntries);
-        for (int i = 0; i < commands.Length; i++)
-        {
-            string[] splittedMessage = commands[i].Split(":", StringSplitOptions.RemoveEmptyEntries);
-            if (i > 0)
-                stringResponse += ";";
-            if (splittedMessage.Length == 1)
-            {
-                if (_voidActions.ContainsKey(splittedMessage[0]))
-                    stringResponse += _voidActions[splittedMessage[0]]();
-                else
-                    stringResponse += $"KO:Unknown command {splittedMessage[0]}";
-            }
-            else if (splittedMessage.Length == 2)
-            {
-                if (_floatActions.ContainsKey(splittedMessage[0]))
-                    stringResponse += _floatActions[splittedMessage[0]](float.Parse(splittedMessage[1]));
-                else
-                    stringResponse += $"KO:Unknown command {splittedMessage[0]}";
-            }
-            else if (splittedMessage.Length > 2)
-            {
-                stringResponse += $"KO:Command format not supported, lenght is {splittedMessage.Length}";
-            }
-        }
-
-        return stringResponse;
-    }
-
     public void ResetCarPosition()
     {
         carController.Reset();
@@ -156,9 +124,9 @@ public class CarContinuousController : Agent
     
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
-        var throttle = actionBuffers.ContinuousActions[0]; // Throttle (forward/backward)
-        var steering = actionBuffers.ContinuousActions[1]; // Steering (left/right)
-        Debug.Log($"throttle: {throttle}\nsteering: {steering}");
+        var throttle = actionBuffers.ContinuousActions[0];
+        var steering = actionBuffers.ContinuousActions[1];
+        // Debug.Log($"throttle: {throttle}\nsteering: {steering}");
         carController.Move(throttle);
         carController.Turn(steering);
     }
@@ -170,29 +138,24 @@ public class CarContinuousController : Agent
     
     public override void CollectObservations(VectorSensor sensor)
     {
-        // float posReward = (6f - this.signedDistance.ComputeSignedDistanceToCenterLine()) / 6f;
-        // // float speedReward = carController.Speed() / carController.maxSpeed;
-        // float tangentReward = this.signedDistance.ComputeTangentToCenterLine();
-        //
-        // // Debug.Log($"kpos reward: {posReward}, kspeed reward: {_lastSpeedValue}  tangent reward: {tangentReward}");
-        // float reward = kPos * posReward + kSpeed * _lastSpeedValue + kTangent * tangentReward;
-        // AddReward(reward);
-        //
-        // List<(Mask.CollideRegion, float)> distanceToLines = Mask.GetDistancesToLines(300, carCamera, insideLayer, outsideLayer, numberRay, 100);
-        //
-        // // sensor.AddObservation(carController.Speed() / carController.maxSpeed);
-        // foreach ((Mask.CollideRegion region, float distance) in distanceToLines)
-        // {
-        //     // sensor.AddObservation((int)region);
-        //     sensor.AddObservation(distance);
-        // }
+        List<int> distance = RenderTextureToString.GetRaycasts(carVisionCamera.targetTexture, NbRay, Fov);
+
+        foreach (int i in distance)
+        {
+            sensor.AddObservation(i);
+        }
+
+        for (int i = distance.Count; i < behaviorParameters.BrainParameters.VectorObservationSize; i++)
+        {
+            sensor.AddObservation(-1);
+        }
     }
 
-    // public override void Heuristic(in ActionBuffers actionsOut)
-    // {
+    public override void Heuristic(in ActionBuffers actionsOut)
+    {
         // var continuousActions = actionsOut.ContinuousActions;
 
         // continuousActions[0] = Input.GetAxis("Vertical");
         // continuousActions[1] = Input.GetAxis("Horizontal");
-    // }
+    }
 }

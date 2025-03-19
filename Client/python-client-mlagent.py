@@ -1,3 +1,4 @@
+import json
 import socket
 import threading
 
@@ -13,7 +14,15 @@ def start_agents(host='127.0.0.1', port=12345):
     """Connect to TCP server and retrieve worker ID"""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((host, port))
-        s.send(bytes("NB_AGENT:2;FOV:155;NB_RAY:20", 'utf-8'))
+        infos = {
+            'agents': [
+                {
+                    'fov': 180,
+                    'nbRay': 20
+                },
+            ]
+        }
+        s.send(bytes(json.dumps(infos), 'utf-8'))
 
 
 def on_press(key):

@@ -25,45 +25,46 @@ public class TcpServer : MonoBehaviour
     private Material[] _materials;
     private TcpListener _tcpListener;
     private readonly TcpClient _client;
-    private static int _nbCars = 1;
-    private static int _fov = 110;
-    private static int _nbRay = 10;
+    // private static int _nbCars = 1;
+    // private static int _fov = 110;
+    // private static int _nbRay = 10;
     private readonly string _folderPath = Path.Combine("CarMaterialVariation");
     private readonly ConcurrentQueue<Action> _mainThreadActions = new ConcurrentQueue<Action>();
-    private readonly Dictionary<string, Action<string>> _commands = new Dictionary<string, Action<string>>()
-    {
-        {"NB_AGENT", (value) =>
-        {
-            if (int.TryParse(value, out int nbAgent))
-            {
-                if (nbAgent > 0)
-                {
-                    _nbCars = nbAgent;
-                }
-            }
-        }},
-        {"FOV", (value) =>
-        {
-            if (int.TryParse(value, out int fov))
-            {
-                if (fov is > 1 and < 180)
-                {
-                    _fov = fov;
-                }
-            }
-        }},
-        {"NB_RAY", (value) =>
-        {
-            if (int.TryParse(value, out int nbRay))
-            {
-                if (nbRay is > 1 and < 50)
-                {
-                    _nbRay = nbRay;
-                }
-            }
-        }},
-    };
+    // private readonly Dictionary<string, Action<string>> _commands = new Dictionary<string, Action<string>>()
+    // {
+        // {"NB_AGENT", (value) =>
+        // {
+            // if (int.TryParse(value, out int nbAgent))
+            // {
+                // if (nbAgent > 0)
+                // {
+                    // _nbCars = nbAgent;
+                // }
+            // }
+        // }},
+        // {"FOV", (value) =>
+        // {
+            // if (int.TryParse(value, out int fov))
+            // {
+                // if (fov is > 1 and < 180)
+                // {
+                    // _fov = fov;
+                // }
+            // }
+        // }},
+        // {"NB_RAY", (value) =>
+        // {
+            // if (int.TryParse(value, out int nbRay))
+            // {
+                // if (nbRay is > 1 and < 50)
+                // {
+                    // _nbRay = nbRay;
+                // }
+            // }
+        // }},
+    // };
 
+    private AgentsConfig _content;
     
 
     private void Start()
@@ -94,7 +95,7 @@ public class TcpServer : MonoBehaviour
         _client.Close();
     }
 
-    private void AddClient(TcpClient tcpClient)
+    private void AddClient(int index)
     {
         var newGo = Instantiate(agentPrefab, agents.transform, true);
         newGo.transform.position = startPosition.position;
@@ -109,10 +110,10 @@ public class TcpServer : MonoBehaviour
                 }
 
         var carsController = newGo.GetComponent<CarContinuousController>();
-        Debug.Log($"setting car index to {_nbCars}, fov to {_fov} and nbRay to {_nbRay}");
-        carsController.CarIndex = _nbCars-- - 1;
-        carsController.Fov = _fov;
-        carsController.NbRay = _nbRay;
+        Debug.Log($"setting car index to {index}, fov to {_content.agents[index].fov} and nbRay to {_content.agents[index].nbRay}");
+        carsController.CarIndex = index;
+        carsController.Fov = _content.agents[index].fov;
+        carsController.NbRay = _content.agents[index].nbRay;
         carsController.canvas = canvas;
         carsController.startPosition = startPosition;
         carsController.trackDropDown = trackDropDown;
@@ -159,19 +160,38 @@ public class TcpServer : MonoBehaviour
         }
     }
 
+    [System.Serializable]
+    public class AgentConfig
+    {
+        public int fov;
+        public int nbRay;
+    }
+
+    [System.Serializable]
+    public class AgentsConfig
+    {
+        public AgentConfig[] agents;
+    }
+
     private void ExtractInfoFromMessage(string message)
     {
-        string[] splitedMessage =  message.Split(new char[] { ';' });
+        Debug.Log($"ExtractInfoFromMessage: {message}");
+        _content = JsonUtility.FromJson<AgentsConfig>(message);
 
-        foreach (string part in splitedMessage)
+        // Access the data
+        foreach (var agent in _content.agents)
         {
-            string[] subPart = part.Split(new char[] { ':' });
+            Debug.Log($"Fov: {agent.fov}, NbRay: {agent.nbRay}");
+        }
+        // foreach (string part in splitedMessage)
+        // {
+            // string[] subPart = part.Split(new char[] { ':' });
 
-            if (_commands.TryGetValue(subPart[0], out var action))
-            {
-                action(subPart[1]);
-            }
-        } 
+            // if (_commands.TryGetValue(subPart[0], out var action))
+            // {
+                // action(subPart[1]);
+            // }
+        // } 
     }
 
     private void OnDataReceived(IAsyncResult result)
@@ -189,9 +209,10 @@ public class TcpServer : MonoBehaviour
             {
                 var message = Encoding.ASCII.GetString(buffer, 0, bytesRead);
                 ExtractInfoFromMessage(message);
-                for (int i = 0; i < _nbCars; i++)
+                for (int i = 0; i < _content.agents.Length; i++)
                 {
-                    _mainThreadActions.Enqueue(() => AddClient(tcpClient));
+                    var i1 = i;
+                    _mainThreadActions.Enqueue(() => AddClient(i1));
                 }
             }
             else

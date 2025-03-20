@@ -4,6 +4,7 @@ import os
 import pickle
 import socket
 import threading
+import time
 from keyword import iskeyword
 
 from mlagents_envs.environment import UnityEnvironment
@@ -14,25 +15,6 @@ from pynput import keyboard
 from mlagents_envs.side_channel.engine_configuration_channel import EngineConfigurationChannel
 
 from utils import load_config
-
-
-def start_agents(host='127.0.0.1', port=12345):
-    """Connect to TCP server and retrieve worker ID"""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((host, port))
-        infos = {
-            'agents': [
-                # {
-                #     'fov': 180,
-                #     'nbRay': 20
-                # },
-                {
-                    'fov': 180,
-                    'nbRay': 15
-                },
-            ]
-        }
-        s.send(bytes(json.dumps(infos), 'utf-8'))
 
 
 def on_press(key):
@@ -69,14 +51,14 @@ def keyboard_controller(current_speed, current_steer):
     if keys['z']:
         current_speed = MAX_SPEED
     elif keys['s']:
-        current_speed = 0
+        current_speed = -MAX_SPEED
     else:
         current_speed -= 1 if current_speed > 0 else 0
 
     if keys['q']:
-        current_steer -= STEERING_OFFSET if current_steer > -MAX_STEERING else 0
+        current_steer -= STEERING_OFFSET if current_steer > -MAX_STEERING else -MAX_STEERING
     elif keys['d']:
-        current_steer += STEERING_OFFSET if current_steer < MAX_STEERING else 0
+        current_steer += STEERING_OFFSET if current_steer < MAX_STEERING else MAX_STEERING
     else:
         current_steer = 0
     return current_speed, current_steer
@@ -98,14 +80,14 @@ def append_to_csv(row):
 
 
 def mlagent_controller():
-    TCP_HOST = '0.0.0.0'
-    TCP_PORT = 8085
+
     try:
-        engine_config_channel = EngineConfigurationChannel()
-        start_agents(TCP_HOST, TCP_PORT)
+        additional_args = ["--config-path", os.path.join('agents-config.json')]
+
         env = UnityEnvironment(
-            file_name=None,
-            side_channels=[engine_config_channel],
+            file_name=os.path.join('..', 'RacingSimulator', 'TestMLAgent', 'RacingSimulator.x86_64'),
+            additional_args=additional_args,
+            # file_name=None,
             base_port=5004,
         )
         env.reset()
@@ -225,9 +207,11 @@ if __name__ == "__main__":
 
     MAX_SPEED = 10
     MAX_STEERING = 10
-    STEERING_OFFSET = 2
+    STEERING_OFFSET = 7
 
-    keyboard_agent = [False]
+    # keyboard_agent = [False]
+    # keyboard_agent = [True, False, False]
+    keyboard_agent = [True, True, True, True, True]
     config = load_config('config.ini')
 
     file_path = config.get('DEFAULT', 'csv_path')

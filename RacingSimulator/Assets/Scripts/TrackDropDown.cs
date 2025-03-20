@@ -6,7 +6,7 @@ public class TrackDropDown : MonoBehaviour
 {
     public List<GameObject> tracks = new();
     public GameObject agents;
-    public CentraleLine lapManager;
+    public CentralLine lapManager;
     public TextMeshProUGUI bestScoreText;
 
     private TMP_Dropdown _dropdown;
@@ -41,7 +41,6 @@ public class TrackDropDown : MonoBehaviour
         {
             if (_tracksBest[i].Item1 == activeTrack)
             {
-                Debug.Log($"{activeTrack} exist and {bestScore} < {_tracksBest[i].Item2}");
                 trackBestExist = true;
                 if ((!Mathf.Approximately(bestScore, -1) && bestScore < _tracksBest[i].Item2) || Mathf.Approximately(_tracksBest[i].Item2, -1))
                 {

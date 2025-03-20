@@ -13,6 +13,7 @@ public class LineRendererColliderGenerator : MonoBehaviour
     private Outline _outline;
 
     public float ColliderWidth { get; set; } = -1f;
+    public int ColliderIndexOffset { get; set; } = 1;
 
     private void Start()
     {
@@ -40,6 +41,8 @@ public class LineRendererColliderGenerator : MonoBehaviour
 
         for (int i = 0; i < numPositions - 1; i++)
         {
+            if (i % ColliderIndexOffset != 0) continue;
+            
             Vector3 startPos = _lineRenderer.GetPosition(i);
             Vector3 endPos = _lineRenderer.GetPosition(i + 1);
 

@@ -32,6 +32,7 @@ public class ViewDropDown : MonoBehaviour
 
     public void AddCamera(Camera myCamera, int carIndex)
     {
+        if (myCamera == null) return;
         if (myCamera.name != "Back Camera") return;
         _dropdown.options.Add(new TMP_Dropdown.OptionData($"Agent {carIndex}"));
         myCamera.enabled = false;

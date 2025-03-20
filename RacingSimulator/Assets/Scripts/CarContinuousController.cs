@@ -29,7 +29,7 @@ public class CarContinuousController : Agent
     private readonly List<string> _touchedCheckpoints = new();
 
     public int NumberCollider { get; set; }
-    public int Fov { get; set; }
+    public float Fov { get; set; }
 
     public int NbRay { get; set; }
 
@@ -80,7 +80,7 @@ public class CarContinuousController : Agent
         }
         else if (other.CompareTag("Finish"))
         {
-            if (_touchedCheckpoints.Count == NumberCollider)
+            if (_touchedCheckpoints.Count == NumberCollider && NumberCollider != 0)
             {
                 _timer += Time.deltaTime;
                 int minutes = Mathf.FloorToInt(_timer / 60);
@@ -91,7 +91,6 @@ public class CarContinuousController : Agent
             }
             else
             {
-                // Debug.Log($"you cheated !! {NumberCollider - _touchedCheckpoints.Count} missing checkpoints");
             }
             _touchedCheckpoints.Clear();
         }
@@ -117,16 +116,13 @@ public class CarContinuousController : Agent
     private void UpdateTimer()
     {
         _timer += Time.deltaTime;
-        int minute =  Mathf.FloorToInt(_timer / 60);
-        int second = Mathf.FloorToInt(_timer % 60);
-        _textMesh.text = string.Format($"Agent {CarIndex}: {minute:00}:{second:00}");
+        _textMesh.text = string.Format($"Agent {CarIndex}: {Mathf.FloorToInt(_timer / 60):00}:{Mathf.FloorToInt(_timer % 60):00}");
     }
     
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
         var throttle = actionBuffers.ContinuousActions[0];
         var steering = actionBuffers.ContinuousActions[1];
-        // Debug.Log($"throttle: {throttle}\nsteering: {steering}");
         carController.Move(throttle);
         carController.Turn(steering);
     }

@@ -122,7 +122,7 @@ LineRenderer:
   - {x: -55.38, y: 4.1, z: 20.7}
   - {x: -61.7, y: 3.56, z: 32.4}
   - {x: -63.7, y: 3.73, z: 50}
-  - {x: -63.7, y: 0, z: 146.5}
+  - {x: -63.7, y: 0, z: 146.83}
   m_Parameters:
     serializedVersion: 3
     widthMultiplier: 0.1

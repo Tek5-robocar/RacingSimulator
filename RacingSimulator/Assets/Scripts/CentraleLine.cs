@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CentraleLine : MonoBehaviour
+public class CentralLine : MonoBehaviour
 {
     private readonly List<GameObject> _cars = new();
     private LineRenderer _centralLine;
@@ -116,6 +116,7 @@ public class CentraleLine : MonoBehaviour
 
         LineRendererColliderGenerator linesColliders = part.AddComponent<LineRendererColliderGenerator>();
         linesColliders.ColliderWidth = 15f;
+        linesColliders.ColliderIndexOffset = 5;
         
         linesColliders.OnStartFinished += () =>
         {

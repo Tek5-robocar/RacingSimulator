@@ -198,7 +198,7 @@ LineRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Positions:
-  - {x: 0, y: 0, z: 0}
+  - {x: -0.06, y: 0, z: 0.25}
   - {x: 8.74, y: 0, z: -12.38}
   - {x: 20.64, y: 0, z: -15.39}
   m_Parameters:

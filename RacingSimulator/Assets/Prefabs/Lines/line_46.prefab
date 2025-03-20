@@ -174,7 +174,7 @@ LineRenderer:
   - {x: -21.3, y: 0, z: 33.2}
   - {x: -25.6, y: 0, z: 36.6}
   - {x: -28.1, y: 0, z: 38.1}
-  - {x: -36.2, y: 0, z: 42.46}
+  - {x: -36.3, y: 0, z: 42.6}
   m_Parameters:
     serializedVersion: 3
     widthMultiplier: 0.1
@@ -360,14 +360,14 @@ LineRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Positions:
-  - {x: 0, y: 0, z: 0}
+  - {x: -0.05, y: 0, z: -0.16}
   - {x: -2.04, y: 0, z: 3.69}
   - {x: -4.5, y: 0, z: 7.34}
   - {x: -7.64, y: 0, z: 11.28}
   - {x: -11.94, y: 0, z: 15.57}
   - {x: -16.6, y: 0, z: 19.1}
   - {x: -20, y: 0, z: 21.3}
-  - {x: -24.79, y: 0, z: 23.72}
+  - {x: -24.79, y: 0, z: 23.82}
   m_Parameters:
     serializedVersion: 3
     widthMultiplier: 0.1

@@ -18,7 +18,7 @@ public class TcpServer : MonoBehaviour
     public TrackDropDown trackDropDown;
     public Transform startPosition;
     public GameObject canvas;
-    public CentraleLine lapManager;
+    public CentralLine lapManager;
     
     private Thread _broadcastThread;
     private bool _isServerRunning;

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class CarController : MonoBehaviour
 {
@@ -22,11 +23,11 @@ public class CarController : MonoBehaviour
     public float maxSpeed = 50f;
     public float minSpeed = -50f;
     public float forwardFrictionStiffness = 2f;
+    public Rigidbody carRigidbody;
 
     public float sidewaysFrictionStiffness = 2f;
     // private bool isBraking;
 
-    private Rigidbody _carRigidbody;
     private float _currentBrakeForce;
     private float _currentMotorForce;
 
@@ -38,8 +39,8 @@ public class CarController : MonoBehaviour
         _currentBrakeForce = 0f;
         _currentMotorForce = 0f;
         // isBraking = false;
-        _carRigidbody.linearVelocity = Vector3.zero;
-        _carRigidbody.angularVelocity = Vector3.zero;
+        carRigidbody.linearVelocity = Vector3.zero;
+        carRigidbody.angularVelocity = Vector3.zero;
 
         frontLeftWheel.steerAngle = _currentSteerAngle;
         frontRightWheel.steerAngle = _currentSteerAngle;
@@ -52,8 +53,6 @@ public class CarController : MonoBehaviour
 
     private void Start()
     {
-        _carRigidbody = GetComponent<Rigidbody>();
-
         AdjustWheelGrip(frontLeftWheel);
         AdjustWheelGrip(frontRightWheel);
         AdjustWheelGrip(rearLeftWheel);
@@ -85,8 +84,8 @@ public class CarController : MonoBehaviour
 
     private void HandleMotor()
     {
-        float currentSpeed = _carRigidbody.linearVelocity.magnitude *
-                             Mathf.Sign(Vector3.Dot(_carRigidbody.linearVelocity, transform.forward));
+        float currentSpeed = carRigidbody.linearVelocity.magnitude *
+                             Mathf.Sign(Vector3.Dot(carRigidbody.linearVelocity, transform.forward));
         bool shouldBrake = (_currentMotorForce > 0 && currentSpeed < 0) || (_currentMotorForce < 0 && currentSpeed > 0);
 
         if (shouldBrake)
@@ -152,7 +151,7 @@ public class CarController : MonoBehaviour
 
     public float Speed()
     {
-        return _carRigidbody.linearVelocity.magnitude;
+        return carRigidbody.linearVelocity.magnitude;
     }
 
     public float Steering()

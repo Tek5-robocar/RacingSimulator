@@ -29,7 +29,7 @@ public class CameraFOVCalculator : MonoBehaviour
 
             targetTexture.width = Mathf.RoundToInt(textureHeight * aspectRatio);
 
-            // Debug.Log("Render Texture resized to: " + targetTexture.width + "x" + targetTexture.height);
+            Debug.Log("Render Texture resized to: " + targetTexture.width + "x" + targetTexture.height);
         }
 
         // Debug.Log("Calculated Aspect Ratio: " + aspectRatio);

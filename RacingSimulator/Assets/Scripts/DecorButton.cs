@@ -12,7 +12,7 @@ public class DecorButton : MonoBehaviour
     private bool _isActivated = true;
     void Start()
     {
-        buttonText.text = "Deactivate Decor";
+        buttonText.text = "Disable Decor";
         button.onClick.AddListener(OnClick);
     }
 
@@ -20,7 +20,7 @@ public class DecorButton : MonoBehaviour
     {
         if (_isActivated)
         {
-            buttonText.text = "Activate Decor";
+            buttonText.text = "Enable Decor";
             foreach (GameObject decorElem in decorsToDeactivate)
             {
                 decorElem.SetActive(false);
@@ -28,7 +28,7 @@ public class DecorButton : MonoBehaviour
         }
         else
         {
-            buttonText.text = "Deactivate Decor";
+            buttonText.text = "Disable Decor";
             foreach (GameObject decorElem in decorsToDeactivate)
             {
                 decorElem.SetActive(true);

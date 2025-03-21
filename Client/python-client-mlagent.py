@@ -1,18 +1,12 @@
 import csv
-import json
 import os
 import pickle
-import socket
 import threading
-import time
-from keyword import iskeyword
 
 from mlagents_envs.environment import UnityEnvironment
 from mlagents_envs.base_env import ActionTuple
 import numpy as np
 from pynput import keyboard
-
-from mlagents_envs.side_channel.engine_configuration_channel import EngineConfigurationChannel
 
 from utils import load_config
 
@@ -210,8 +204,8 @@ if __name__ == "__main__":
     STEERING_OFFSET = 7
 
     # keyboard_agent = [False]
-    # keyboard_agent = [True, False, False]
-    keyboard_agent = [True, True, True, True, True]
+    keyboard_agent = [True, False, False, False]
+    # keyboard_agent = [True, True, True, True, True]
     config = load_config('config.ini')
 
     file_path = config.get('DEFAULT', 'csv_path')

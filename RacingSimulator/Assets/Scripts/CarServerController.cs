@@ -86,18 +86,18 @@ public class CarServerController : MonoBehaviour
             {
                 "GET_INFOS_RAYCAST", () =>
                 {
-                    List<int> distance = RenderTextureToString.GetRaycasts(carVisionCamera.targetTexture, _numberRay, _fov);
-                    if (distance.Count == _numberRay)
-                    {
-                        string buffer = "OK:GET_INFOS_RAYCAST";
-                        foreach (int distanceToLine in distance)
-                        {
-                            buffer += ":";
-                            buffer += distanceToLine.ToString("0.00");
-                        }
+                    // (List<int> distance, _) = RenderTextureToString.GetRaycasts(carVisionCamera.targetTexture, _numberRay, _fov);
+                    // if (distance.Count == _numberRay)
+                    // {
+                        // string buffer = "OK:GET_INFOS_RAYCAST";
+                        // foreach (int distanceToLine in distance)
+                        // {
+                            // buffer += ":";
+                            // buffer += distanceToLine.ToString("0.00");
+                        // }
 
-                        return buffer;
-                    }
+                        // return buffer;
+                    // }
 
                     return "KO:GET_INFOS_RAYCAST";
                 }

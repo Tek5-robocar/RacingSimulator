@@ -7,16 +7,19 @@ using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Policies;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
+using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 public class CarContinuousController : Agent
 {
+    public RawImage carVisionImage;
     public CarController carController;
     public Camera carVisionCamera;
     public GameObject canvas;
     public Transform startPosition;
     public TrackDropDown trackDropDown;
     public BehaviorParameters  behaviorParameters;
+    public Raycast Raycast;
     
     private readonly Dictionary<string, Func<float, string>> _floatActions;
     private readonly Dictionary<string, Func<string>> _voidActions;
@@ -45,7 +48,10 @@ public class CarContinuousController : Agent
 
     private void Start()
     {
-        _renderTexture = new RenderTexture(694 / 2, 512 / 2, 1);
+        _renderTexture = new RenderTexture(347, 256, 1)
+        {
+            name = CarIndex.ToString()
+        };
         carVisionCamera.targetTexture = _renderTexture;
 
         Random.InitState(DateTime.Now.Millisecond);
@@ -134,7 +140,9 @@ public class CarContinuousController : Agent
     
     public override void CollectObservations(VectorSensor sensor)
     {
-        List<int> distance = RenderTextureToString.GetRaycasts(carVisionCamera.targetTexture, NbRay, Fov);
+        (List<int> distance, Texture2D newTexture) = Raycast.GetRaycasts(carVisionCamera.targetTexture, carVisionImage.texture as Texture2D, NbRay, Fov);
+        
+        carVisionImage.texture = newTexture;
 
         foreach (int i in distance)
         {

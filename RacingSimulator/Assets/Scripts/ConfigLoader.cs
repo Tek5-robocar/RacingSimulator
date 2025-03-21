@@ -9,6 +9,7 @@ public class ConfigLoader : MonoBehaviour
     public GameObject agentPrefab;
     public Transform startPosition;
     public GameObject canvas;
+    public Raycast raycast;
     
     private const string EditorConfigPath = "Assets/agents-config.json";
     private readonly string _materialFolderPath = Path.Combine("CarMaterialVariation");
@@ -101,6 +102,7 @@ public class ConfigLoader : MonoBehaviour
         carsController.canvas = canvas;
         carsController.startPosition = startPosition;
         carsController.trackDropDown = _trackDropDown;
+        carsController.Raycast = raycast;
         for (var i = 0; i < newGo.transform.childCount; i++)
             foreach (var myCamera in newGo.transform.GetChild(i).GetComponents<Camera>())
                 _viewDropDown.AddCamera(myCamera, carsController.CarIndex);

@@ -2,11 +2,19 @@
   "agents": [
     {
       "fov": 180,
-      "nbRay": 10
+      "nbRay": 50
     },
     {
-      "fov": 180,
+      "fov": 100,
       "nbRay": 15
+    },
+    {
+      "fov": 75,
+      "nbRay": 25
+    },
+    {
+      "fov": 50,
+      "nbRay": 5
     }
   ]
 }

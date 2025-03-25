@@ -1,13 +1,17 @@
 import csv
+import json
 import os
 import pickle
 import threading
 
+import torch
 from mlagents_envs.environment import UnityEnvironment
 from mlagents_envs.base_env import ActionTuple
 import numpy as np
 from pynput import keyboard
 
+from Client.Agent import Agent
+from Client.pytorch_regression import Regression
 from utils import load_config
 
 
@@ -37,8 +41,8 @@ def on_release(key):
 
 def ai_controller(rf_model, state):
     float_arr = [(float(elem) - min_value) / (max_value - min_value) for elem in state]
-    prediction = rf_model.predict(np.array([float_arr]))
-    return 0.5, get_numeric_steering(prediction)
+    prediction = rf_model(torch.tensor([float_arr]))
+    return 1.0, prediction[0][0].item()
 
 
 def keyboard_controller(current_speed, current_steer):
@@ -63,23 +67,23 @@ def get_numeric_steering(prediction: str) -> float:
     return steering
 
 
-def append_to_csv(row):
+def append_to_csv(row, file_path, header):
     file_exists = os.path.isfile(file_path) and os.path.getsize(file_path) > 0
 
     with open(file_path, mode='a', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
         if not file_exists:
-            writer.writerow(headers)
+            writer.writerow(header)
         writer.writerow(row)
 
 
 def mlagent_controller():
 
     try:
-        additional_args = ["--config-path", os.path.join('agents-config.json')]
+        additional_args = ["--config-path", json_path]
 
         env = UnityEnvironment(
-            file_name=os.path.join('..', 'RacingSimulator', 'TestMLAgent', 'RacingSimulator.x86_64'),
+            file_name=os.path.join('..', 'RacingSimulator', 'BuildLinux', 'RacingSimulator.x86_64'),
             additional_args=additional_args,
             # file_name=None,
             base_port=5004,
@@ -89,8 +93,7 @@ def mlagent_controller():
         behavior_names = list(env.behavior_specs.keys())
         print(f"Agent behaviors: {behavior_names}")
         behavior_names = [(behavior_names[i], 0, 0, keyboard_agent[i]) for i in range(len(behavior_names))]
-        with open('random_forest_model.pkl', 'rb') as f:
-            rf_model = pickle.load(f)
+        my_agent = Agent('model.pth', min_value, max_value)
         try:
             while True:
                 for i in range(len(behavior_names)):
@@ -105,12 +108,13 @@ def mlagent_controller():
 
                     if is_keyboard:
                         current_speed, current_steer = keyboard_controller(current_speed, current_steer)
-                        # for steering in steering_map:
-                        #     if steering_map[steering][0] * 10 <= current_steer <= steering_map[steering][1] * 10:
-                        #         append_to_csv([str(nb) for nb in state[0]] + [steering] + [str(current_steer / 10)])
-                        #         break
+                        for steering in steering_map:
+                            if steering_map[steering][0] * 10 <= current_steer <= steering_map[steering][1] * 10:
+                                append_to_csv([str(nb) for nb in state[0][:json_agent['agents'][i]['nbRay']]] + [steering] + [str(current_steer / 10)], file_paths[i], headers[i])
+                                break
                     else:
-                        current_speed, current_steer = ai_controller(rf_model, state[0,:10])
+                        current_speed = 1.0
+                        current_steer = my_agent.act(torch.tensor(state[0, :10]))
                         current_steer *= 10
                         current_speed *= 10
 
@@ -203,15 +207,26 @@ if __name__ == "__main__":
     MAX_STEERING = 10
     STEERING_OFFSET = 7
 
-    # keyboard_agent = [False]
-    keyboard_agent = [True, False, False, False]
-    # keyboard_agent = [True, True, True, True, True]
+    keyboard_agent = [False, False, False, False]
     config = load_config('config.ini')
 
-    file_path = config.get('DEFAULT', 'csv_path')
-    headers = ['ray_cast_1', 'ray_cast_2', 'ray_cast_3', 'ray_cast_4', 'ray_cast_5', 'ray_cast_6', 'ray_cast_7',
-               'ray_cast_8', 'ray_cast_9', 'ray_cast_10', 'steering_discrete', 'steering_continuous']
-    max_value = float(config.get('normalization', 'ray_value_max'))
-    min_value = float(config.get('normalization', 'ray_value_min'))
+    json_path = config.get('DEFAULT', 'json_path')
+    with open(json_path) as f:
+        json_agent = json.load(f)
+    print(json_agent)
+
+    headers = []
+    file_paths = []
+    i = 0
+    for agent in json_agent['agents']:
+        headers.append([f'raycast_{i}' for i in range(agent['nbRay'])] + ['steering_discrete', 'steering_continuous'])
+        file_paths.append(config.get('DEFAULT', 'csv_path').replace('.csv', f'_fov{agent["fov"]}_{i}.csv'))
+        i += 1
+
+    print(headers)
+    print(file_paths)
+
+    max_value = float(config.getfloat('normalization', 'ray_value_max'))
+    min_value = float(config.getfloat('normalization', 'ray_value_min'))
 
     main()

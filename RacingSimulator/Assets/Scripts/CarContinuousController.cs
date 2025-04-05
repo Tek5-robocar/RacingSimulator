@@ -30,6 +30,7 @@ public class CarContinuousController : Agent
     private GameObject _textMeshGo;
     private float _timer;
     private readonly List<string> _touchedCheckpoints = new();
+    public bool resetCarPosition { get; set; } = false;
 
     public int NumberCollider { get; set; }
     public float Fov { get; set; }
@@ -71,14 +72,19 @@ public class CarContinuousController : Agent
 
     private void FixedUpdate()
     {
-        if (transform.position.y < -20) ResetCarPosition();
+        if (transform.position.y < -20)
+        {
+            resetCarPosition = true;
+            EndEpisode();
+        }
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Lines"))
         {
-            ResetCarPosition();
+            resetCarPosition = true;
+            EndEpisode();
         }
         else if (other.CompareTag("Checkpoint"))
         {
@@ -93,7 +99,7 @@ public class CarContinuousController : Agent
                 int seconds = Mathf.FloorToInt(_timer % 60);
                 Debug.Log($"you finished a lap in {minutes:00}:{seconds:00} !!");
                 trackDropDown.UpdateBestScore(_timer);
-                _timer = 0f;
+                EndEpisode();
             }
             else
             {
@@ -115,8 +121,6 @@ public class CarContinuousController : Agent
         gameObject.transform.position = startPosition.position;
         gameObject.transform.rotation = startPosition.rotation;
         transform.Rotate(new Vector3(0, -90, 0));
-        _touchedCheckpoints.Clear();
-        _timer = 0f; 
     }
 
     private void UpdateTimer()
@@ -135,7 +139,10 @@ public class CarContinuousController : Agent
 
     public override void OnEpisodeBegin()
     {
-        ResetCarPosition();
+        _timer = 0f;
+        _touchedCheckpoints.Clear();
+        if (resetCarPosition)
+            ResetCarPosition();
     }
     
     public override void CollectObservations(VectorSensor sensor)
@@ -149,10 +156,15 @@ public class CarContinuousController : Agent
             sensor.AddObservation(i);
         }
 
-        for (int i = distance.Count; i < behaviorParameters.BrainParameters.VectorObservationSize; i++)
+        for (int i = distance.Count; i < behaviorParameters.BrainParameters.VectorObservationSize - 5; i++)
         {
             sensor.AddObservation(-1);
         }
+        sensor.AddObservation(carController.Speed());
+        sensor.AddObservation(carController.Steering());
+        sensor.AddObservation(carController.transform.position.x);
+        sensor.AddObservation(carController.transform.position.y);
+        sensor.AddObservation(carController.transform.position.z);
     }
 
     public override void Heuristic(in ActionBuffers actionsOut)

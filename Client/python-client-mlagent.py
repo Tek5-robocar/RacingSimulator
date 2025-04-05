@@ -105,7 +105,8 @@ def mlagent_controller():
                     state = decision_steps.obs[0]
                     reward = decision_steps.reward[0]
                     done = len(terminal_steps) > 0
-
+                    if done:
+                        print('end episode')
                     if is_keyboard:
                         current_speed, current_steer = keyboard_controller(current_speed, current_steer)
                         for steering in steering_map:

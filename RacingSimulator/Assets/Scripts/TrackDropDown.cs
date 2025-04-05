@@ -67,7 +67,11 @@ public class TrackDropDown : MonoBehaviour
         for (int i = 0; i < agents.transform.childCount; i++)
         {
             CarContinuousController carServerController = agents.transform.GetChild(i).GetComponent<CarContinuousController>();
-            if (carServerController != null) carServerController.ResetCarPosition();
+            if (carServerController != null)
+            {
+                carServerController.resetCarPosition = true;
+                carServerController.EndEpisode();
+            };
         }
         foreach (GameObject track in tracks) track.SetActive(false);
         tracks[_dropdown.value].SetActive(true);

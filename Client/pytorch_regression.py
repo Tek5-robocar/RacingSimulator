@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import torch
-from IPython.core.display_functions import display
 from matplotlib import pyplot as plt, colors
 
 from Client.utils import load_config

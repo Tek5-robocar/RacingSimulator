@@ -11,7 +11,6 @@ import numpy as np
 from pynput import keyboard
 
 from Client.Agent import Agent
-from Client.pytorch_regression import Regression
 from utils import load_config
 
 
@@ -92,6 +91,7 @@ def mlagent_controller():
 
         behavior_names = list(env.behavior_specs.keys())
         print(f"Agent behaviors: {behavior_names}")
+
         behavior_names = [(behavior_names[i], 0, 0, keyboard_agent[i]) for i in range(len(behavior_names))]
         my_agent = Agent('model.pth', min_value, max_value)
         try:

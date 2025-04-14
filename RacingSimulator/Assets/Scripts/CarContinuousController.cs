@@ -30,12 +30,17 @@ public class CarContinuousController : Agent
     private GameObject _textMeshGo;
     private float _timer;
     private readonly List<string> _touchedCheckpoints = new();
-    public bool resetCarPosition { get; set; } = false;
+    public bool ResetCarPositionState { get; set; } = false;
 
     public int NumberCollider { get; set; }
+    public CentralLine CentralLine { get; set; }
     public float Fov { get; set; }
 
     public int NbRay { get; set; }
+    
+    public float DistanceToCenterMultiplier {get;set;}
+    public float SpeedMultiplier {get;set;}
+    public float AlignmentMultiplier {get;set;}
 
     public int CarIndex
     {
@@ -74,7 +79,7 @@ public class CarContinuousController : Agent
     {
         if (transform.position.y < -20)
         {
-            resetCarPosition = true;
+            ResetCarPositionState = true;
             EndEpisode();
         }
     }
@@ -83,7 +88,7 @@ public class CarContinuousController : Agent
     {
         if (other.CompareTag("Lines"))
         {
-            resetCarPosition = true;
+            ResetCarPositionState = true;
             EndEpisode();
         }
         else if (other.CompareTag("Checkpoint"))
@@ -141,12 +146,23 @@ public class CarContinuousController : Agent
     {
         _timer = 0f;
         _touchedCheckpoints.Clear();
-        if (resetCarPosition)
+        if (ResetCarPositionState)
             ResetCarPosition();
     }
     
     public override void CollectObservations(VectorSensor sensor)
     {
+        float speedReward = this.carController.Speed() / this.carController.maxSpeed;
+        float distanceToCenterReward = (6 - Math.Abs(CentralLine.SignedDistanceToLine(transform.position))) / 6;
+        // float alignmentReward = 0f;
+
+        float reward = speedReward * SpeedMultiplier + distanceToCenterReward * DistanceToCenterMultiplier;
+                                                     // + alignmentReward * AlignmentMultiplier; 
+        
+        Debug.Log($"reward: {reward} => distanceToCenter: {distanceToCenterReward}, speed: {speedReward}");
+        
+        this.SetReward(reward);
+        
         (List<int> distance, Texture2D newTexture) = Raycast.GetRaycasts(carVisionCamera.targetTexture, carVisionImage.texture as Texture2D, NbRay, Fov);
         
         carVisionImage.texture = newTexture;
@@ -169,9 +185,9 @@ public class CarContinuousController : Agent
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        // var continuousActions = actionsOut.ContinuousActions;
+        var continuousActions = actionsOut.ContinuousActions;
 
-        // continuousActions[0] = Input.GetAxis("Vertical");
-        // continuousActions[1] = Input.GetAxis("Horizontal");
+        continuousActions[0] = Input.GetAxis("Vertical");
+        continuousActions[1] = Input.GetAxis("Horizontal");
     }
 }

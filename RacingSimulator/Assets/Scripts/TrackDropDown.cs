@@ -69,7 +69,7 @@ public class TrackDropDown : MonoBehaviour
             CarContinuousController carServerController = agents.transform.GetChild(i).GetComponent<CarContinuousController>();
             if (carServerController != null)
             {
-                carServerController.resetCarPosition = true;
+                carServerController.ResetCarPositionState = true;
                 carServerController.EndEpisode();
             };
         }

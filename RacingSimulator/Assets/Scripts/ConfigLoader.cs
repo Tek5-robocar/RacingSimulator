@@ -69,7 +69,6 @@ public class ConfigLoader : MonoBehaviour
             ConfigData config = JsonUtility.FromJson<ConfigData>(json);
             for (int i = 0; i < config.agents.Length; i++)
             {
-                Debug.Log($"Initializing agent with FOV={config.agents[i].fov}, NbRay={config.agents[i].nbRay}");
                 InitializeAgent(config.agents[i], i);
             }
         }
@@ -82,6 +81,7 @@ public class ConfigLoader : MonoBehaviour
 
     void InitializeAgent(AgentConfig agentConfig, int index)
     {
+        if (agentConfig.fov < 1 || agentConfig.fov > 180 || agentConfig.nbRay < 1 || agentConfig.nbRay > 50 || !Mathf.Approximately(agentConfig.speed + agentConfig.alignment + agentConfig.distanceToCenter, 1)) return;
         var newGo = Instantiate(agentPrefab, agents.transform, true);
         newGo.transform.position = startPosition.position;
         if (_materials.Length > 0)
@@ -103,6 +103,10 @@ public class ConfigLoader : MonoBehaviour
         carsController.startPosition = startPosition;
         carsController.trackDropDown = _trackDropDown;
         carsController.Raycast = raycast;
+        carsController.SpeedMultiplier = agentConfig.speed;
+        carsController.DistanceToCenterMultiplier = agentConfig.distanceToCenter;
+        carsController.AlignmentMultiplier = agentConfig.alignment;
+        carsController.CentralLine = _centralLine;
         for (var i = 0; i < newGo.transform.childCount; i++)
             foreach (var myCamera in newGo.transform.GetChild(i).GetComponents<Camera>())
                 _viewDropDown.AddCamera(myCamera, carsController.CarIndex);
@@ -122,5 +126,8 @@ public class ConfigLoader : MonoBehaviour
     {
         public float fov;
         public int nbRay;
+        public float distanceToCenter;
+        public float alignment;
+        public float speed;
     }
 }

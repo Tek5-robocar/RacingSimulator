@@ -1,24 +1,23 @@
-using UnityEngine;
-using System.IO;
 using System;
+using System.IO;
+using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class ConfigLoader : MonoBehaviour
 {
+    private const string EditorConfigPath = "Assets/agents-config.json";
     public GameObject agents;
     public GameObject agentPrefab;
     public Transform startPosition;
     public GameObject canvas;
     public Raycast raycast;
-    
-    private const string EditorConfigPath = "Assets/agents-config.json";
     private readonly string _materialFolderPath = Path.Combine("CarMaterialVariation");
-    private Material[] _materials;
-    private ViewDropDown _viewDropDown;
-    private TrackDropDown _trackDropDown;
     private CentralLine _centralLine;
+    private Material[] _materials;
+    private TrackDropDown _trackDropDown;
+    private ViewDropDown _viewDropDown;
 
-    void Start()
+    private void Start()
     {
         _viewDropDown = canvas.GetComponentInChildren<ViewDropDown>();
         _trackDropDown = canvas.GetComponentInChildren<TrackDropDown>();
@@ -28,46 +27,35 @@ public class ConfigLoader : MonoBehaviour
             Debug.LogError("Could not find View or Track drop dropdown or central line in canvas.");
             Application.Quit();
         }
+
         _materials = Resources.LoadAll<Material>(_materialFolderPath);
-        string configPath = GetConfigPath();
+        var configPath = GetConfigPath();
         if (!string.IsNullOrEmpty(configPath))
-        {
             LoadConfig(configPath);
-        }
         else
-        {
             Debug.LogError("Config file path is null or empty!");
-        }
     }
 
-    string GetConfigPath()
+    private string GetConfigPath()
     {
-        if (Application.isEditor)
-        {
-            return EditorConfigPath;
-        }
-        else
-        {
-            string[] args = System.Environment.GetCommandLineArgs();
-            for (int i = 0; i < args.Length; i++)
-            {
-                if (args[i] == "--config-path" && i + 1 < args.Length)
-                {
-                    return args[i + 1];
-                }
-            }
-            Debug.LogError("No config file path provided! Use --config-path /path/to/config.json");
-            return null;
-        }
+        if (Application.isEditor) return EditorConfigPath;
+
+        var args = Environment.GetCommandLineArgs();
+        for (var i = 0; i < args.Length; i++)
+            if (args[i] == "--config-path" && i + 1 < args.Length)
+                return args[i + 1];
+
+        Debug.LogError("No config file path provided! Use --config-path /path/to/config.json");
+        return null;
     }
 
-    void LoadConfig(string path)
+    private void LoadConfig(string path)
     {
         try
         {
-            string json = File.ReadAllText(path);
-            ConfigData config = JsonUtility.FromJson<ConfigData>(json);
-            for (int i = 0; i < config.agents.Length; i++)
+            var json = File.ReadAllText(path);
+            var config = JsonUtility.FromJson<ConfigData>(json);
+            for (var i = 0; i < config.agents.Length; i++)
             {
                 Debug.Log($"Initializing agent with FOV={config.agents[i].fov}, NbRay={config.agents[i].nbRay}");
                 InitializeAgent(config.agents[i], i);
@@ -80,7 +68,7 @@ public class ConfigLoader : MonoBehaviour
         }
     }
 
-    void InitializeAgent(AgentConfig agentConfig, int index)
+    private void InitializeAgent(AgentConfig agentConfig, int index)
     {
         var newGo = Instantiate(agentPrefab, agents.transform, true);
         newGo.transform.position = startPosition.position;
@@ -111,13 +99,13 @@ public class ConfigLoader : MonoBehaviour
         Debug.Log($"Agent initialized with FOV={agentConfig.fov}, NbRay={agentConfig.nbRay}");
     }
 
-    [System.Serializable]
+    [Serializable]
     public class ConfigData
     {
         public AgentConfig[] agents;
     }
 
-    [System.Serializable]
+    [Serializable]
     public class AgentConfig
     {
         public float fov;

@@ -9,16 +9,16 @@ public class CameraFOVCalculator : MonoBehaviour
 
     private void Start()
     {
-        float dfovRad = Mathf.Deg2Rad * diagonalFOV;
-        float hfovRad = Mathf.Deg2Rad * horizontalFOV;
+        var dfovRad = Mathf.Deg2Rad * diagonalFOV;
+        var hfovRad = Mathf.Deg2Rad * horizontalFOV;
 
-        float aspectRatio = Mathf.Tan(hfovRad / 2) / Mathf.Sqrt(Mathf.Tan(dfovRad / 2) * Mathf.Tan(dfovRad / 2) -
-                                                                Mathf.Tan(hfovRad / 2) * Mathf.Tan(hfovRad / 2));
+        var aspectRatio = Mathf.Tan(hfovRad / 2) / Mathf.Sqrt(Mathf.Tan(dfovRad / 2) * Mathf.Tan(dfovRad / 2) -
+                                                              Mathf.Tan(hfovRad / 2) * Mathf.Tan(hfovRad / 2));
 
-        float vfovRad = 2 * Mathf.Atan(Mathf.Tan(hfovRad / 2) / aspectRatio);
-        float verticalFOV = vfovRad * Mathf.Rad2Deg;
+        var vfovRad = 2 * Mathf.Atan(Mathf.Tan(hfovRad / 2) / aspectRatio);
+        var verticalFOV = vfovRad * Mathf.Rad2Deg;
 
-        Camera cam = GetComponent<Camera>();
+        var cam = GetComponent<Camera>();
         cam.fieldOfView = verticalFOV;
         cam.aspect = aspectRatio;
 

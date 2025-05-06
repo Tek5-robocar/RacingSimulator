@@ -14,7 +14,7 @@ public class ViewDropDown : MonoBehaviour
     {
         _dropdown = GetComponent<TMP_Dropdown>();
         _dropdown.options.Clear();
-        foreach (Camera myCamera in cameras)
+        foreach (var myCamera in cameras)
         {
             _dropdown.options.Add(new TMP_Dropdown.OptionData(myCamera.name));
             myCamera.enabled = false;
@@ -26,7 +26,7 @@ public class ViewDropDown : MonoBehaviour
 
     private void DropdownValueChanged()
     {
-        foreach (Camera myCamera in cameras) myCamera.enabled = false;
+        foreach (var myCamera in cameras) myCamera.enabled = false;
         cameras[_dropdown.value].enabled = true;
     }
 
@@ -43,7 +43,7 @@ public class ViewDropDown : MonoBehaviour
     {
         _dropdown.value = 0;
         DropdownValueChanged();
-        int cameraIndex = _dropdown.options.FindIndex(data => data.text == $"Agent {carIndex}");
+        var cameraIndex = _dropdown.options.FindIndex(data => data.text == $"Agent {carIndex}");
         if (cameraIndex < 0) return;
         _dropdown.options.RemoveAt(cameraIndex);
         cameras.RemoveAt(cameraIndex);

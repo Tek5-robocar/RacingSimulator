@@ -1,9 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
 
-[System.Serializable]
+[Serializable]
 public class TrackData
 {
     public string name;
@@ -16,10 +17,10 @@ public class TrackData
     }
 }
 
-[System.Serializable]
+[Serializable]
 public class TrackDataListSerializable
 {
-    public List<TrackData> tracks = new List<TrackData>();
+    public List<TrackData> tracks = new();
 }
 
 public static class BinarySaveManager
@@ -28,12 +29,12 @@ public static class BinarySaveManager
 
     public static void SaveTracks(List<(string, float)> tracks)
     {
-        BinaryFormatter formatter = new BinaryFormatter();
-        FileStream file = File.Create(FilePath);
-        
-        TrackDataListSerializable data = new TrackDataListSerializable();
+        var formatter = new BinaryFormatter();
+        var file = File.Create(FilePath);
+
+        var data = new TrackDataListSerializable();
         data.tracks = tracks.ConvertAll(t => new TrackData(t.Item1, t.Item2));
-        
+
         formatter.Serialize(file, data);
         file.Close();
     }
@@ -42,14 +43,15 @@ public static class BinarySaveManager
     {
         if (File.Exists(FilePath))
         {
-            BinaryFormatter formatter = new BinaryFormatter();
-            FileStream file = File.Open(FilePath, FileMode.Open);
-            
-            TrackDataListSerializable data = (TrackDataListSerializable)formatter.Deserialize(file);
+            var formatter = new BinaryFormatter();
+            var file = File.Open(FilePath, FileMode.Open);
+
+            var data = (TrackDataListSerializable)formatter.Deserialize(file);
             file.Close();
-            
+
             return data.tracks.ConvertAll(t => (t.name, t.score));
         }
+
         return new List<(string, float)>();
     }
 }

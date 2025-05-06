@@ -37,16 +37,16 @@ public class LineRendererColliderGenerator : MonoBehaviour
 
     private void CreateColliders()
     {
-        int numPositions = _lineRenderer.positionCount;
+        var numPositions = _lineRenderer.positionCount;
 
-        for (int i = 0; i < numPositions - 1; i++)
+        for (var i = 0; i < numPositions - 1; i++)
         {
             if (i % ColliderIndexOffset != 0) continue;
-            
-            Vector3 startPos = _lineRenderer.GetPosition(i);
-            Vector3 endPos = _lineRenderer.GetPosition(i + 1);
 
-            BoxCollider newCollider = new GameObject(_lineRenderer.name + "Collider").AddComponent<BoxCollider>();
+            var startPos = _lineRenderer.GetPosition(i);
+            var endPos = _lineRenderer.GetPosition(i + 1);
+
+            var newCollider = new GameObject(_lineRenderer.name + "Collider").AddComponent<BoxCollider>();
             _colliders.Add(newCollider);
 
             newCollider.tag = _lineRenderer.tag;
@@ -54,15 +54,15 @@ public class LineRendererColliderGenerator : MonoBehaviour
 
             newCollider.transform.SetParent(transform);
 
-            Vector3 colliderPos = (transform.TransformPoint(startPos) + transform.TransformPoint(endPos)) / 2;
+            var colliderPos = (transform.TransformPoint(startPos) + transform.TransformPoint(endPos)) / 2;
             newCollider.transform.position = colliderPos;
 
-            float distance = Vector3.Distance(startPos, endPos);
+            var distance = Vector3.Distance(startPos, endPos);
             newCollider.size = new Vector3(distance, 10, ColliderWidth);
 
-            Vector3 direction = (endPos - startPos).normalized;
-            Vector3 normal = Vector3.Cross(direction, Vector3.up).normalized;
-            float oldRotation = transform.rotation.eulerAngles.y;
+            var direction = (endPos - startPos).normalized;
+            var normal = Vector3.Cross(direction, Vector3.up).normalized;
+            var oldRotation = transform.rotation.eulerAngles.y;
             newCollider.transform.rotation = Quaternion.LookRotation(normal);
             newCollider.transform.Rotate(new Vector3(0, 0 - oldRotation, 0));
 

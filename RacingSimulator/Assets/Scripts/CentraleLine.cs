@@ -6,13 +6,13 @@ public class CentralLine : MonoBehaviour
     private readonly List<GameObject> _cars = new();
     private LineRenderer _centralLine;
 
-    private int _numberCollider = 0;
+    private int _numberCollider;
     private GameObject _track;
 
     public void AddCar(GameObject car)
     {
         _cars.Add(car);
-        CarContinuousController carController = car.GetComponent<CarContinuousController>();
+        var carController = car.GetComponent<CarContinuousController>();
         carController.NumberCollider = _numberCollider;
     }
 
@@ -24,12 +24,12 @@ public class CentralLine : MonoBehaviour
             return -1;
         }
 
-        int closestIndex = 0;
-        float closestDistance = Vector3.Distance(target, vectors[0]);
+        var closestIndex = 0;
+        var closestDistance = Vector3.Distance(target, vectors[0]);
 
-        for (int i = 1; i < vectors.Length; i++)
+        for (var i = 1; i < vectors.Length; i++)
         {
-            float distance = Vector3.Distance(target, vectors[i]);
+            var distance = Vector3.Distance(target, vectors[i]);
             if (distance < closestDistance)
             {
                 closestDistance = distance;
@@ -42,34 +42,34 @@ public class CentralLine : MonoBehaviour
 
     private Vector3 RotatePointAroundPivot(Vector3 point, Vector3 pivot, Quaternion rotation)
     {
-        Vector3 direction = point - pivot;
+        var direction = point - pivot;
         direction = rotation * direction;
         return pivot + direction;
     }
 
     private void GenerateCentralLineRendererPart(GameObject part)
     {
-        LineRenderer[] lines = part.GetComponentsInChildren<LineRenderer>();
+        var lines = part.GetComponentsInChildren<LineRenderer>();
         if (lines.Length != 2) return;
-        List<(Vector3, Vector3)> associatedPoints = new List<(Vector3, Vector3)>();
-        Vector3[] bigger = new Vector3[lines[0].positionCount > lines[1].positionCount
+        var associatedPoints = new List<(Vector3, Vector3)>();
+        var bigger = new Vector3[lines[0].positionCount > lines[1].positionCount
             ? lines[0].positionCount
             : lines[1].positionCount];
-        Vector3[] smaller = new Vector3[lines[0].positionCount > lines[1].positionCount
+        var smaller = new Vector3[lines[0].positionCount > lines[1].positionCount
             ? lines[1].positionCount
             : lines[0].positionCount];
 
         if (lines[0].positionCount > lines[1].positionCount)
         {
             lines[0].GetPositions(bigger);
-            for (int i = 0; i < bigger.Length; i++)
+            for (var i = 0; i < bigger.Length; i++)
             {
                 bigger[i] += lines[0].transform.position;
                 bigger[i] = RotatePointAroundPivot(bigger[i], lines[0].transform.position, lines[0].transform.rotation);
             }
 
             lines[1].GetPositions(smaller);
-            for (int i = 0; i < smaller.Length; i++)
+            for (var i = 0; i < smaller.Length; i++)
             {
                 smaller[i] += lines[1].transform.position;
                 smaller[i] =
@@ -79,7 +79,7 @@ public class CentralLine : MonoBehaviour
         else
         {
             lines[0].GetPositions(smaller);
-            for (int i = 0; i < smaller.Length; i++)
+            for (var i = 0; i < smaller.Length; i++)
             {
                 smaller[i] += lines[0].transform.position;
                 smaller[i] =
@@ -87,16 +87,16 @@ public class CentralLine : MonoBehaviour
             }
 
             lines[1].GetPositions(bigger);
-            for (int i = 0; i < bigger.Length; i++)
+            for (var i = 0; i < bigger.Length; i++)
             {
                 bigger[i] += lines[1].transform.position;
                 bigger[i] = RotatePointAroundPivot(bigger[i], lines[1].transform.position, lines[1].transform.rotation);
             }
         }
 
-        foreach (Vector3 biggerPos in bigger)
+        foreach (var biggerPos in bigger)
         {
-            int closestIndex = GetClosestVectorIndex(biggerPos, smaller);
+            var closestIndex = GetClosestVectorIndex(biggerPos, smaller);
             associatedPoints.Add((biggerPos, smaller[closestIndex]));
         }
 
@@ -104,9 +104,9 @@ public class CentralLine : MonoBehaviour
         _centralLine.positionCount = associatedPoints.Count;
         _centralLine.widthMultiplier = 0f;
 
-        for (int i = 0; i < associatedPoints.Count; i++)
+        for (var i = 0; i < associatedPoints.Count; i++)
         {
-            Vector3 centralPoint = new Vector3(
+            var centralPoint = new Vector3(
                 (associatedPoints[i].Item1.x + associatedPoints[i].Item2.x) / 2,
                 (associatedPoints[i].Item1.y + associatedPoints[i].Item2.y) / 2,
                 (associatedPoints[i].Item1.z + associatedPoints[i].Item2.z) / 2
@@ -114,20 +114,21 @@ public class CentralLine : MonoBehaviour
             _centralLine.SetPosition(i, centralPoint);
         }
 
-        LineRendererColliderGenerator linesColliders = part.AddComponent<LineRendererColliderGenerator>();
+        var linesColliders = part.AddComponent<LineRendererColliderGenerator>();
         linesColliders.ColliderWidth = 15f;
         linesColliders.ColliderIndexOffset = 5;
-        
+
         linesColliders.OnStartFinished += () =>
         {
-            foreach (BoxCollider boxCollider in linesColliders.GetColliders())
+            foreach (var boxCollider in linesColliders.GetColliders())
             {
                 _numberCollider++;
-                foreach (GameObject car in _cars)
+                foreach (var car in _cars)
                 {
-                    CarContinuousController carController = car.GetComponent<CarContinuousController>();
+                    var carController = car.GetComponent<CarContinuousController>();
                     carController.NumberCollider = _numberCollider;
                 }
+
                 boxCollider.name = $"checkpoint_{_numberCollider}";
                 boxCollider.tag = "Checkpoint";
             }
@@ -136,21 +137,20 @@ public class CentralLine : MonoBehaviour
 
     private void GenerateCentralLineRenderer()
     {
-        for (int i = 0; i < _track.transform.childCount; i++)
-        {
+        for (var i = 0; i < _track.transform.childCount; i++)
             GenerateCentralLineRendererPart(_track.transform.GetChild(i).gameObject);
-        }
     }
 
     public void SetTrack(GameObject track)
     {
         _numberCollider = 0;
-        foreach (GameObject car in _cars)
+        foreach (var car in _cars)
         {
-            CarContinuousController carController = car.GetComponent<CarContinuousController>();
+            var carController = car.GetComponent<CarContinuousController>();
             carController.NumberCollider = -1;
         }
-        this._track = track;
+
+        _track = track;
         GenerateCentralLineRenderer();
     }
 

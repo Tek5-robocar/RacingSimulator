@@ -18,10 +18,11 @@ public class CarContinuousController : Agent
     public GameObject canvas;
     public Transform startPosition;
     public TrackDropDown trackDropDown;
-    public BehaviorParameters  behaviorParameters;
+    public BehaviorParameters behaviorParameters;
     public Raycast Raycast;
-    
+
     private readonly Dictionary<string, Func<float, string>> _floatActions;
+    private readonly List<string> _touchedCheckpoints = new();
     private readonly Dictionary<string, Func<string>> _voidActions;
     private bool _isRunning;
     private RenderTexture _renderTexture;
@@ -29,8 +30,7 @@ public class CarContinuousController : Agent
     private TextMeshProUGUI _textMesh;
     private GameObject _textMeshGo;
     private float _timer;
-    private readonly List<string> _touchedCheckpoints = new();
-    public bool resetCarPosition { get; set; } = false;
+    public bool resetCarPosition { get; set; }
 
     public int NumberCollider { get; set; }
     public float Fov { get; set; }
@@ -95,15 +95,13 @@ public class CarContinuousController : Agent
             if (_touchedCheckpoints.Count == NumberCollider && NumberCollider != 0)
             {
                 _timer += Time.deltaTime;
-                int minutes = Mathf.FloorToInt(_timer / 60);
-                int seconds = Mathf.FloorToInt(_timer % 60);
+                var minutes = Mathf.FloorToInt(_timer / 60);
+                var seconds = Mathf.FloorToInt(_timer % 60);
                 Debug.Log($"you finished a lap in {minutes:00}:{seconds:00} !!");
                 trackDropDown.UpdateBestScore(_timer);
                 EndEpisode();
             }
-            else
-            {
-            }
+
             _touchedCheckpoints.Clear();
         }
     }
@@ -126,9 +124,10 @@ public class CarContinuousController : Agent
     private void UpdateTimer()
     {
         _timer += Time.deltaTime;
-        _textMesh.text = string.Format($"Agent {CarIndex}: {Mathf.FloorToInt(_timer / 60):00}:{Mathf.FloorToInt(_timer % 60):00}");
+        _textMesh.text =
+            string.Format($"Agent {CarIndex}: {Mathf.FloorToInt(_timer / 60):00}:{Mathf.FloorToInt(_timer % 60):00}");
     }
-    
+
     public override void OnActionReceived(ActionBuffers actionBuffers)
     {
         var throttle = actionBuffers.ContinuousActions[0];
@@ -144,22 +143,18 @@ public class CarContinuousController : Agent
         if (resetCarPosition)
             ResetCarPosition();
     }
-    
+
     public override void CollectObservations(VectorSensor sensor)
     {
-        (List<int> distance, Texture2D newTexture) = Raycast.GetRaycasts(carVisionCamera.targetTexture, carVisionImage.texture as Texture2D, NbRay, Fov);
-        
+        var (distance, newTexture) = Raycast.GetRaycasts(carVisionCamera.targetTexture,
+            carVisionImage.texture as Texture2D, NbRay, Fov);
+
         carVisionImage.texture = newTexture;
 
-        foreach (int i in distance)
-        {
-            sensor.AddObservation(i);
-        }
+        foreach (var i in distance) sensor.AddObservation(i);
 
-        for (int i = distance.Count; i < behaviorParameters.BrainParameters.VectorObservationSize - 5; i++)
-        {
+        for (var i = distance.Count; i < behaviorParameters.BrainParameters.VectorObservationSize - 5; i++)
             sensor.AddObservation(-1);
-        }
         sensor.AddObservation(carController.Speed());
         sensor.AddObservation(carController.Steering());
         sensor.AddObservation(carController.transform.position.x);

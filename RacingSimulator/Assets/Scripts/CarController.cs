@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class CarController : MonoBehaviour
 {
@@ -26,7 +25,6 @@ public class CarController : MonoBehaviour
     public Rigidbody carRigidbody;
 
     public float sidewaysFrictionStiffness = 2f;
-    // private bool isBraking;
 
     private float _currentBrakeForce;
     private float _currentMotorForce;
@@ -38,7 +36,6 @@ public class CarController : MonoBehaviour
         _currentSteerAngle = 0f;
         _currentBrakeForce = 0f;
         _currentMotorForce = 0f;
-        // isBraking = false;
         carRigidbody.linearVelocity = Vector3.zero;
         carRigidbody.angularVelocity = Vector3.zero;
 
@@ -68,11 +65,11 @@ public class CarController : MonoBehaviour
 
     private void AdjustWheelGrip(WheelCollider wheel)
     {
-        WheelFrictionCurve forwardFriction = wheel.forwardFriction;
+        var forwardFriction = wheel.forwardFriction;
         forwardFriction.stiffness = forwardFrictionStiffness;
         wheel.forwardFriction = forwardFriction;
 
-        WheelFrictionCurve sidewaysFriction = wheel.sidewaysFriction;
+        var sidewaysFriction = wheel.sidewaysFriction;
         sidewaysFriction.stiffness = sidewaysFrictionStiffness;
         wheel.sidewaysFriction = sidewaysFriction;
     }
@@ -84,9 +81,9 @@ public class CarController : MonoBehaviour
 
     private void HandleMotor()
     {
-        float currentSpeed = carRigidbody.linearVelocity.magnitude *
-                             Mathf.Sign(Vector3.Dot(carRigidbody.linearVelocity, transform.forward));
-        bool shouldBrake = (_currentMotorForce > 0 && currentSpeed < 0) || (_currentMotorForce < 0 && currentSpeed > 0);
+        var currentSpeed = carRigidbody.linearVelocity.magnitude *
+                           Mathf.Sign(Vector3.Dot(carRigidbody.linearVelocity, transform.forward));
+        var shouldBrake = (_currentMotorForce > 0 && currentSpeed < 0) || (_currentMotorForce < 0 && currentSpeed > 0);
 
         if (shouldBrake)
         {
@@ -123,13 +120,7 @@ public class CarController : MonoBehaviour
 
     public void Turn(float direction)
     {
-        // float speedFactor = Mathf.Clamp01(carRigidbody.linearVelocity.magnitude / maxSpeed);
-        // float dynamicSteerAngle = maxSteerAngle * (1 - speedFactor);
-
         _currentSteerAngle = maxSteerAngle * direction / 2;
-        // currentSteerAngle = dynamicSteerAngle * direction;
-        // frontLeftWheel.steerAngle = _currentSteerAngle;
-        // frontRightWheel.steerAngle = _currentSteerAngle;
     }
 
     private void UpdateWheels()
@@ -144,7 +135,7 @@ public class CarController : MonoBehaviour
 
     private void UpdateWheelPose(WheelCollider wheelCollider, Transform wheelTransform)
     {
-        wheelCollider.GetWorldPose(out Vector3 pos, out Quaternion rot);
+        wheelCollider.GetWorldPose(out var pos, out var rot);
         wheelTransform.position = pos;
         wheelTransform.rotation = rot;
     }
@@ -156,10 +147,6 @@ public class CarController : MonoBehaviour
 
     public float Steering()
     {
-        // float speedFactor = Mathf.Clamp01(carRigidbody.linearVelocity.magnitude / maxSpeed);
-        // float dynamicSteerAngle = maxSteerAngle * (1 - speedFactor);
-
-        // return currentSteerAngle / dynamicSteerAngle;
         return _currentSteerAngle / maxSteerAngle;
     }
 

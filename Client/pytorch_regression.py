@@ -3,7 +3,7 @@ import pandas as pd
 import torch
 from matplotlib import pyplot as plt, colors
 
-from Client.utils import load_config
+from utils import load_config
 
 
 class Regression(torch.nn.Module):
@@ -38,16 +38,20 @@ def show_distribution(data: pd.DataFrame, column: str):
 def load_data():
     global min_value
     global max_value
+    print(csv_path)
     data = pd.read_csv(csv_path)
 
-    data.drop(columns=['steering_discrete'], axis=1, inplace=True)
+    data.drop(columns=['ai_prediction'], axis=1, inplace=True)
 
     min_value = min(data.iloc[0:, :10].min())
     max_value = max(data.iloc[0:, :10].max())
+    min_target = min(data.iloc[0:,10])
+    max_target = max(data.iloc[0:,10])
 
     print(f'min_value = {min_value}, max_value = {max_value}')
+    print(f'min_target = {min_target}, max_target = {max_target}')
 
-    show_distribution(data, 'steering_continuous')
+    show_distribution(data, 'direction')
     show_correlation(data)
     mask = np.random.rand(len(data)) < 1.0 - config.getfloat('normalization', 'test_proportion')
 
@@ -109,17 +113,27 @@ def main():
     nb_epochs = config.getint('hyperparameters', 'nb_epochs')
 
     losses = []
+    scaler = torch.amp.GradScaler('cuda')
 
     early_stop = config.getint('hyperparameters', 'early_stop')
 
     for i in range(nb_epochs):
+        # optimizers.zero_grad()
+        #
+        # with torch.autocast(device_type=device):
+        #     train_y_predictions = model(train_x).to(device)
+        #     loss_value = loss(train_y_predictions.squeeze(), train_y.squeeze())
+        # loss_value.backward()
+        # optimizers.step()
         optimizers.zero_grad()
 
-        with torch.autocast(device_type=device):
+        with torch.amp.autocast('cuda', dtype=torch.float16):
             train_y_predictions = model(train_x).to(device)
             loss_value = loss(train_y_predictions.squeeze(), train_y.squeeze())
-        loss_value.backward()
-        optimizers.step()
+
+        scaler.scale(loss_value).backward()
+        scaler.step(optimizers)
+        scaler.update()
 
         if len(losses) > 0 and loss_value > losses[-1]:
             early_stop -= 1

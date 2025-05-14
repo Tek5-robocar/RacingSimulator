@@ -189,16 +189,13 @@ def start_listener():
 
 
 def main():
-    # unity_process = subprocess.Popen([config.get('unity', 'env_path')])
-    # time.sleep(10)
+    unity_process = subprocess.Popen([config.get('unity', 'env_path')])
+    time.sleep(5)
 
     update_thread = threading.Thread(target=update_key_values, daemon=True)
     update_thread.start()
 
     start_listener()
-
-    # if unity_process:z
-    #     unity_process.terminate()
 
 
 if __name__ == '__main__':

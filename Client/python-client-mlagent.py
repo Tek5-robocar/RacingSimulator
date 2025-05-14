@@ -10,8 +10,7 @@ from mlagents_envs.base_env import ActionTuple
 import numpy as np
 from pynput import keyboard
 
-from Client.Agent import Agent
-from Client.pytorch_regression import Regression
+from Agent import Agent
 from utils import load_config
 
 
@@ -81,9 +80,9 @@ def mlagent_controller():
 
     try:
         additional_args = ["--config-path", json_path]
-
+        print(additional_args)
         env = UnityEnvironment(
-            file_name=os.path.join('..', 'RacingSimulator', 'BuildLinux', 'RacingSimulator.x86_64'),
+            file_name=config.get('unity', 'env_path'),
             additional_args=additional_args,
             # file_name=None,
             base_port=5004,
@@ -93,7 +92,7 @@ def mlagent_controller():
         behavior_names = list(env.behavior_specs.keys())
         print(f"Agent behaviors: {behavior_names}")
         behavior_names = [(behavior_names[i], 0, 0, keyboard_agent[i]) for i in range(len(behavior_names))]
-        my_agent = Agent('model.pth', min_value, max_value)
+        my_agent = Agent('model_car.pth', min_value, max_value)
         try:
             while True:
                 for i in range(len(behavior_names)):
@@ -116,6 +115,9 @@ def mlagent_controller():
                     else:
                         current_speed = 1.0
                         current_steer = my_agent.act(torch.tensor(state[0, :10]))
+                        print(current_steer)
+                        current_steer = current_steer * 2 - 1
+                        print(current_steer)
                         current_steer *= 10
                         current_speed *= 10
 

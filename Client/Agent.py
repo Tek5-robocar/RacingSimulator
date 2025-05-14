@@ -2,7 +2,7 @@ from typing import Optional, Any
 
 import torch
 
-from Client.pytorch_regression import Regression
+from pytorch_regression import Regression
 
 
 class Agent:
@@ -18,4 +18,5 @@ class Agent:
     def act(self, state: torch.tensor) -> Optional[Any]:
         if len(state) != self.nb_input: return None
         normalized_state = (state - self.min_raycast_value) / (self.max_raycast_value - self.min_raycast_value)
+        print(normalized_state)
         return self.model(normalized_state)[0].item()

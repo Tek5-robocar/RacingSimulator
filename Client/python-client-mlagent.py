@@ -1,16 +1,21 @@
 import csv
 import json
+import math
 import os
-import pickle
 import threading
+import time
 
 import torch
+import tkinter as tk
 from mlagents_envs.environment import UnityEnvironment
 from mlagents_envs.base_env import ActionTuple
 import numpy as np
 from pynput import keyboard
 
 from Agent import Agent
+from LapRecorder import LapRecorder
+from PathFollower import PathFollower
+# from XYLivePlot import LiveXYPlotApp
 from utils import load_config
 
 
@@ -36,12 +41,6 @@ def on_release(key):
             keys[key.char] = False
     except Exception as e:
         print(f"Error in on_release: {e}")
-
-
-def ai_controller(rf_model, state):
-    float_arr = [(float(elem) - min_value) / (max_value - min_value) for elem in state]
-    prediction = rf_model(torch.tensor([float_arr]))
-    return 1.0, prediction[0][0].item()
 
 
 def keyboard_controller(current_speed, current_steer):
@@ -76,8 +75,8 @@ def append_to_csv(row, file_path, header):
         writer.writerow(row)
 
 
+# def mlagent_controller(app):
 def mlagent_controller():
-
     try:
         additional_args = ["--config-path", json_path]
         print(additional_args)
@@ -87,7 +86,14 @@ def mlagent_controller():
             # file_name=None,
             base_port=5004,
         )
+        print('before reset')
         env.reset()
+        print('after reset')
+
+        first_lap_done = False
+        recorder = LapRecorder()
+        recorder.start_recording()
+        follower = None
 
         behavior_names = list(env.behavior_specs.keys())
         print(f"Agent behaviors: {behavior_names}")
@@ -102,24 +108,42 @@ def mlagent_controller():
                     if len(decision_steps.obs) == 0:
                         break
                     state = decision_steps.obs[0]
+                    # x_y = (state[0][-3], state[0][-1])
+
+                    if not first_lap_done:
+                        recorder.add_position(
+                            lat=state[0][-3],
+                            lon=state[0][-1],
+                            timestamp=time.time() + i,
+                            speed=state[0][-4],
+                        )
+                        # app.update_from_external_data(state[0][-3], state[0][-1])
+
                     reward = decision_steps.reward[0]
                     done = len(terminal_steps) > 0
                     if done:
+                        first_lap_done = True
+                        recorder.stop_recording()
+                        follower = PathFollower(recorder.recorded_positions)
                         print('end episode')
                     if is_keyboard:
-                        current_speed, current_steer = keyboard_controller(current_speed, current_steer)
-                        for steering in steering_map:
-                            if steering_map[steering][0] * 10 <= current_steer <= steering_map[steering][1] * 10:
-                                append_to_csv([str(nb) for nb in state[0][:json_agent['agents'][i]['nbRay']]] + [steering] + [str(current_steer / 10)], file_paths[i], headers[i])
-                                break
+                        if first_lap_done and follower is not None:
+                            speed, steering = follower.get_commands(state[0][-3], state[0][-1])
+                            print(speed, steering)
+                        else:
+                            current_speed, current_steer = keyboard_controller(current_speed, current_steer)
+                            for steering in steering_map:
+                                if steering_map[steering][0] * 10 <= current_steer <= steering_map[steering][1] * 10:
+                                    append_to_csv(
+                                        [str(nb) for nb in state[0][:json_agent['agents'][i]['nbRay']]] + [steering] + [
+                                            str(current_steer / 10)], file_paths[i], headers[i])
+                                    break
                     else:
                         current_speed = 1.0
                         current_steer = my_agent.act(torch.tensor(state[0, :10]))
-                        print(current_steer)
                         current_steer = current_steer * 2 - 1
-                        print(current_steer)
-                        current_steer *= 10
                         current_speed *= 10
+                        current_steer *= 10
 
                     action = ActionTuple()
                     continuous_action = np.array(
@@ -146,14 +170,20 @@ def mlagent_controller():
 
 
 def main():
+    # root = tk.Tk()
+    # app = LiveXYPlotApp(root)
     update_thread = threading.Thread(target=mlagent_controller, daemon=True)
+    # update_thread = threading.Thread(target=mlagent_controller, args=(app,), daemon=True)
     update_thread.start()
-    print("Connected to ML-Agents environment. Press:")
-    print("- W to accelerate")
-    print("- A/D to steer left/right")
-    print("- ESC to exit")
-    with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-        listener.join()
+
+    keyboard_thread = threading.Thread(
+        target=lambda: keyboard.Listener(on_press=on_press, on_release=on_release).start(),
+        daemon=True
+    )
+    keyboard_thread.start()
+
+    # root.mainloop()
+
 
 
 if __name__ == "__main__":
@@ -210,7 +240,7 @@ if __name__ == "__main__":
     MAX_STEERING = 10
     STEERING_OFFSET = 7
 
-    keyboard_agent = [False, False, False, False]
+    keyboard_agent = [True]
     config = load_config('config.ini')
 
     json_path = config.get('DEFAULT', 'json_path')

@@ -3,13 +3,12 @@ import json
 import os
 import threading
 
-import torch
 from mlagents_envs.environment import UnityEnvironment
 from mlagents_envs.base_env import ActionTuple
 import numpy as np
 from pynput import keyboard
 
-from Agent import Agent
+from CarSimulation import PathFollower
 from utils import load_config
 
 
@@ -35,12 +34,6 @@ def on_release(key):
             keys[key.char] = False
     except Exception as e:
         print(f"Error in on_release: {e}")
-
-
-def ai_controller(rf_model, state):
-    float_arr = [(float(elem) - min_value) / (max_value - min_value) for elem in state]
-    prediction = rf_model(torch.tensor([float_arr]))
-    return 1.0, prediction[0][0].item()
 
 
 def keyboard_controller(current_speed, current_steer):
@@ -76,7 +69,8 @@ def append_to_csv(row, file_path, header):
 
 
 def mlagent_controller():
-
+    follower = PathFollower()
+    first_loop_done = False
     try:
         additional_args = ["--config-path", json_path]
         print(additional_args)
@@ -91,7 +85,6 @@ def mlagent_controller():
         behavior_names = list(env.behavior_specs.keys())
         print(f"Agent behaviors: {behavior_names}")
         behavior_names = [(behavior_names[i], 0, 0, keyboard_agent[i]) for i in range(len(behavior_names))]
-        my_agent = Agent('model_car.pth', min_value, max_value)
         try:
             while True:
                 for i in range(len(behavior_names)):
@@ -103,22 +96,22 @@ def mlagent_controller():
                     state = decision_steps.obs[0]
                     reward = decision_steps.reward[0]
                     done = len(terminal_steps) > 0
-                    if done:
-                        print('end episode')
-                    if is_keyboard:
+                    if not first_loop_done:
                         current_speed, current_steer = keyboard_controller(current_speed, current_steer)
                         for steering in steering_map:
                             if steering_map[steering][0] * 10 <= current_steer <= steering_map[steering][1] * 10:
-                                append_to_csv([str(nb) for nb in state[0][:json_agent['agents'][i]['nbRay']]] + [steering] + [str(current_steer / 10)], file_paths[i], headers[i])
+                                append_to_csv(
+                                    [str(nb) for nb in state[0][:json_agent['agents'][i]['nbRay']]] + [steering] + [
+                                        str(current_steer / 10)], file_paths[i], headers[i])
                                 break
+                        follower.add_position(state[0][-3], state[0][-1], current_steer)
                     else:
-                        current_speed = 1.0
-                        current_steer = my_agent.act(torch.tensor(state[0, :20]))
-                        print(current_steer)
-                        # current_steer = current_steer * 2 - 1
-                        print(current_steer)
-                        current_steer *= 10
-                        current_speed *= 10
+                        current_steer = follower.get_steering(state[0][-3], state[0][-1])
+                        current_speed = 0.5
+                    if done:
+                        first_loop_done = True
+                        follower.show_path()
+                        print('end episode')
 
                     action = ActionTuple()
                     continuous_action = np.array(
@@ -147,7 +140,7 @@ def mlagent_controller():
 def main():
     update_thread = threading.Thread(target=mlagent_controller, daemon=True)
     update_thread.start()
-    print("Connected to ML-Agents environment. Press:")
+    print("Connected to ML-Agents environmzzzzzent. Press:")
     print("- W to accelerate")
     print("- A/D to steer left/right")
     print("- ESC to exit")
@@ -209,7 +202,7 @@ if __name__ == "__main__":
     MAX_STEERING = 10
     STEERING_OFFSET = 7
 
-    keyboard_agent = [False, True, True, True]
+    keyboard_agent = [True]
     config = load_config('config.ini')
 
     json_path = config.get('DEFAULT', 'json_path')

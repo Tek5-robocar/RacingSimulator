@@ -6,9 +6,9 @@ from matplotlib import pyplot as plt, colors
 from utils import load_config
 
 
-class Regression(torch.nn.Module):
+class GPSTrackerRegression(torch.nn.Module):
     def __init__(self, nb_input, nb_output):
-        super(Regression, self).__init__()
+        super(GPSTrackerRegression, self).__init__()
 
         self.model = torch.nn.Sequential(
             torch.nn.Linear(nb_input, 64),
@@ -39,35 +39,27 @@ def load_data():
     print(csv_path)
     data = pd.read_csv(csv_path)
 
-    data.drop(columns=['steering_discrete'], axis=1, inplace=True)
+    data.drop(columns=['ai_prediction'], axis=1, inplace=True)
 
-    min_value = min(data.iloc[0:, :20].min())
-    max_value = max(data.iloc[0:, :20].max())
-    min_target = min(data.iloc[0:,20])
-    max_target = max(data.iloc[0:,20])
+    min_value = min(data.iloc[0:, :10].min())
+    max_value = max(data.iloc[0:, :10].max())
+    min_target = min(data.iloc[0:,10])
+    max_target = max(data.iloc[0:,10])
 
     print(f'min_value = {min_value}, max_value = {max_value}')
     print(f'min_target = {min_target}, max_target = {max_target}')
 
-    show_distribution(data, 'steering_continuous')
+    show_distribution(data, 'direction')
     show_correlation(data)
     mask = np.random.rand(len(data)) < 1.0 - config.getfloat('normalization', 'test_proportion')
 
     train = data[mask]
-    train_x = (train.iloc[:, :20] - min_value) / (max_value - min_value)
-    train_x = pd.concat(
-        [train_x.iloc[:, i:i + 5].mean(axis=1) for i in range(0, 20, 5)],
-        axis=1
-    )
-    train_y = train.iloc[:, 20]
+    train_x = (train.iloc[:, :10] - min_value) / (max_value - min_value)
+    train_y = train.iloc[:, 10]
 
     test = data[~mask]
-    test_x = (test.iloc[:, :20] - min_value) / (max_value - min_value)
-    test_x = pd.concat(
-        [test_x.iloc[:, i:i + 5].mean(axis=1) for i in range(0, 20, 5)],
-        axis=1
-    )
-    test_y = test.iloc[:, 20]
+    test_x = (test.iloc[:, :10] - min_value) / (max_value - min_value)
+    test_y = test.iloc[:, 10]
 
     return (torch.tensor(train_x.values, dtype=torch.float32).to(device),
             torch.tensor(train_y.values, dtype=torch.float32).to(device),
@@ -78,7 +70,7 @@ def load_data():
 def show_correlation(data: pd.DataFrame):
     corr = data.corr()
 
-    fig, ax = plt.subplots(figsize=(20, 8))
+    fig, ax = plt.subplots(figsize=(10, 8))
 
     cmap = colors.LinearSegmentedColormap.from_list(
         'custom', ['#1f77b4', '#ffffff', '#d62728'], N=256)
@@ -112,7 +104,7 @@ def main():
 
     train_x, train_y, test_x, test_y = load_data()
 
-    model = Regression(4, 1).cuda()
+    model = Regression(10, 1).cuda()
 
     loss = torch.nn.MSELoss().to(device)
     optimizers = torch.optim.Adam(params=model.parameters(), lr=config.getfloat('hyperparameters', 'learning_rate'))

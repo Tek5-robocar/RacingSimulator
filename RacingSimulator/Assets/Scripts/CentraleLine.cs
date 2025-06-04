@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class CentralLine : MonoBehaviour
 {
     private readonly List<GameObject> _cars = new();
     private LineRenderer _centralLine;
+    public List<Vector3> fullCentralLine;
 
     private int _numberCollider;
     private GameObject _track;
@@ -112,6 +114,7 @@ public class CentralLine : MonoBehaviour
                 (associatedPoints[i].Item1.z + associatedPoints[i].Item2.z) / 2
             );
             _centralLine.SetPosition(i, centralPoint);
+            fullCentralLine.Add(centralPoint);
         }
 
         var linesColliders = part.AddComponent<LineRendererColliderGenerator>();

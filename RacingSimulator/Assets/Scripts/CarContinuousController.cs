@@ -32,10 +32,15 @@ public class CarContinuousController : Agent
     private float _timer;
     public bool resetCarPosition { get; set; }
 
+    public float AlignmentScale { get; set; }
+    public float SignedDistanceToCenterScale { get; set; }
+    public float SpeedScale { get; set; }
+
     public int NumberCollider { get; set; }
     public float Fov { get; set; }
 
     public int NbRay { get; set; }
+    public CentralLine CentralLine { get; set; }
 
     public int CarIndex
     {
@@ -144,8 +149,128 @@ public class CarContinuousController : Agent
             ResetCarPosition();
     }
 
+    private float ComputeSignedDistanceToCenterReward()
+{
+    // Get the car's position
+    Vector3 carPosition = transform.position;
+
+    // Initialize variables to find the closest point on the LineRenderer
+    float minDistance = float.MaxValue;
+    Vector3 closestPoint = Vector3.zero;
+    Vector3 segmentDirection = Vector3.zero;
+
+    // Iterate through each segment of the LineRenderer
+    for (int i = 0; i < CentralLine.fullCentralLine.Count - 1; i++)
+    {
+        Vector3 pointA = CentralLine.fullCentralLine[i];
+        Vector3 pointB = CentralLine.fullCentralLine[i + 1];
+
+        // Find the closest point on the segment from pointA to pointB
+        Vector3 pointOnSegment = ClosestPointOnLineSegment(carPosition, pointA, pointB);
+
+        // Calculate the distance to this point
+        float distance = Vector3.Distance(carPosition, pointOnSegment);
+
+        // Update the closest point if this distance is smaller
+        if (distance < minDistance)
+        {
+            minDistance = distance;
+            closestPoint = pointOnSegment;
+            segmentDirection = (pointB - pointA).normalized;
+        }
+    }
+
+    // Calculate the signed distance
+    // Use the cross product to determine if the car is to the left or right of the line
+    Vector3 carToClosest = carPosition - closestPoint;
+    Vector3 lineUp = Vector3.up; // Assuming the track is in the XZ plane
+    Vector3 cross = Vector3.Cross(segmentDirection, carToClosest);
+    float signedDistance = minDistance * Mathf.Sign(Vector3.Dot(cross, lineUp));
+
+    // Normalize the reward (e.g., penalize larger distances)
+    // You can adjust the denominator based on the track's scale
+    float maxDistance = 10f; // Maximum relevant distance (adjust as needed)
+    float reward = 1f - Mathf.Abs(signedDistance) / maxDistance;
+    reward = Mathf.Clamp(reward, -1f, 1f); // Ensure reward is within [-1, 1]
+
+    return reward;
+}
+
+private float ComputeAlignmentWithCenterReward()
+{
+    // Get the car's forward direction
+    Vector3 carForward = transform.forward;
+
+    // Initialize variables to find the closest point and segment direction
+    Vector3 closestPoint = Vector3.zero;
+    Vector3 segmentDirection = Vector3.zero;
+    float minDistance = float.MaxValue;
+
+    // Iterate through each segment to find the closest point and its direction
+    for (int i = 0; i < CentralLine.fullCentralLine.Count - 1; i++)
+    {
+        Vector3 pointA = CentralLine.fullCentralLine[i];
+        Vector3 pointB = CentralLine.fullCentralLine[i + 1];
+
+        // Find the closest point on the segment
+        Vector3 pointOnSegment = ClosestPointOnLineSegment(transform.position, pointA, pointB);
+
+        // Calculate the distance to this point
+        float distance = Vector3.Distance(transform.position, pointOnSegment);
+
+        // Update the closest point and direction if this distance is smaller
+        if (distance < minDistance)
+        {
+            minDistance = distance;
+            closestPoint = pointOnSegment;
+            segmentDirection = (pointB - pointA).normalized;
+        }
+    }
+
+    // Calculate the alignment using the dot product between car's forward and line's tangent
+    float alignment = Vector3.Dot(carForward.normalized, segmentDirection);
+    // The dot product ranges from -1 (opposite direction) to 1 (same direction)
+    // We want to reward positive alignment and penalize negative alignment
+    float reward = alignment; // Already in [-1, 1]
+
+    return reward;
+}
+
+// Helper function to find the closest point on a line segment
+private Vector3 ClosestPointOnLineSegment(Vector3 point, Vector3 segmentStart, Vector3 segmentEnd)
+{
+    Vector3 segment = segmentEnd - segmentStart;
+    float segmentLengthSqr = segment.sqrMagnitude;
+
+    // If the segment has no length, return the start point
+    if (segmentLengthSqr == 0f)
+        return segmentStart;
+
+    // Project the point onto the line segment
+    float t = Vector3.Dot(point - segmentStart, segment) / segmentLengthSqr;
+    t = Mathf.Clamp01(t); // Clamp to the segment
+
+    return segmentStart + t * segment;
+}
+
+    private float ComputeSpeedReward()
+    {
+        return carController.Speed() / carController.maxSpeed;
+    }
+
+    private void SetRewards()
+    {
+        var alignmentReward = ComputeAlignmentWithCenterReward() * AlignmentScale;
+        var signedDistanceToCenterReward = ComputeSignedDistanceToCenterReward() * SignedDistanceToCenterScale;
+        var speedReward = ComputeSpeedReward() * SpeedScale;
+        var reward = alignmentReward + signedDistanceToCenterReward + speedReward;
+        AddReward(reward);
+    }
+
     public override void CollectObservations(VectorSensor sensor)
     {
+        SetRewards();
+
         var (distance, newTexture) = Raycast.GetRaycasts(carVisionCamera.targetTexture,
             carVisionImage.texture as Texture2D, NbRay, Fov);
 
@@ -164,9 +289,9 @@ public class CarContinuousController : Agent
 
     public override void Heuristic(in ActionBuffers actionsOut)
     {
-        // var continuousActions = actionsOut.ContinuousActions;
+        var continuousActions = actionsOut.ContinuousActions;
 
-        // continuousActions[0] = Input.GetAxis("Vertical");
-        // continuousActions[1] = Input.GetAxis("Horizontal");
+        continuousActions[0] = Input.GetAxis("Vertical");
+        continuousActions[1] = Input.GetAxis("Horizontal");
     }
 }

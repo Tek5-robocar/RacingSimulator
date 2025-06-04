@@ -1,8 +1,12 @@
 {
+  "timeSpeed": 1.0,
   "agents": [
     {
       "fov": 180,
-      "nbRay": 10
+      "nbRay": 10,
+      "alignmentScale": 0.3,
+      "signedDistanceToCenterScale": 0.3,
+      "speedScale": 0.3
     }
   ]
 }

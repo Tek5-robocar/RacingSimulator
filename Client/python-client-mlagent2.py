@@ -8,7 +8,6 @@ from mlagents_envs.base_env import ActionTuple
 import numpy as np
 from pynput import keyboard
 
-from CarSimulation import PathFollower
 from utils import load_config
 
 
@@ -69,15 +68,13 @@ def append_to_csv(row, file_path, header):
 
 
 def mlagent_controller():
-    follower = PathFollower()
-    first_loop_done = False
     try:
         additional_args = ["--config-path", json_path]
         print(additional_args)
         env = UnityEnvironment(
-            file_name=config.get('unity', 'env_path'),
-            additional_args=additional_args,
-            # file_name=None,
+            # file_name=config.get('unity', 'env_path'),
+            # additional_args=additional_args,
+            file_name=None,
             base_port=5004,
         )
         env.reset()
@@ -95,22 +92,17 @@ def mlagent_controller():
                         break
                     state = decision_steps.obs[0]
                     reward = decision_steps.reward[0]
+                    print(reward)
                     done = len(terminal_steps) > 0
-                    if not first_loop_done:
-                        current_speed, current_steer = keyboard_controller(current_speed, current_steer)
-                        for steering in steering_map:
-                            if steering_map[steering][0] * 10 <= current_steer <= steering_map[steering][1] * 10:
-                                append_to_csv(
-                                    [str(nb) for nb in state[0][:json_agent['agents'][i]['nbRay']]] + [steering] + [
-                                        str(current_steer / 10)], file_paths[i], headers[i])
-                                break
-                        follower.add_position(state[0][-3], state[0][-1], current_steer)
-                    else:
-                        current_steer = follower.get_steering(state[0][-3], state[0][-1])
-                        current_speed = 0.5
+                    current_speed, current_steer = keyboard_controller(current_speed, current_steer)
+                    for steering in steering_map:
+                        if steering_map[steering][0] * 10 <= current_steer <= steering_map[steering][1] * 10:
+                            append_to_csv(
+                                [str(nb) for nb in state[0][:json_agent['agents'][i]['nbRay']]] + [steering] + [
+                                    str(current_steer / 10)], file_paths[i], headers[i])
+                            break
                     if done:
                         first_loop_done = True
-                        follower.show_path()
                         print('end episode')
 
                     action = ActionTuple()

@@ -142,7 +142,7 @@ public class CarController : MonoBehaviour
 
     public float Speed()
     {
-        return carRigidbody.linearVelocity.magnitude;
+        return carRigidbody.linearVelocity.magnitude * (_currentMotorForce < 0f ? -1 : 1);
     }
 
     public float Steering()

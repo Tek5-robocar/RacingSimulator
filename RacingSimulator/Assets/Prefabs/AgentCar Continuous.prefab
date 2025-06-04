@@ -1218,6 +1218,9 @@ MonoBehaviour:
   trackDropDown: {fileID: 0}
   behaviorParameters: {fileID: 7653113526747971959}
   Raycast: {fileID: 0}
+  alignmentScale: 0
+  signedDistanceToCenterScale: 0
+  speedScale: 1
 --- !u!114 &8969429689649929671
 MonoBehaviour:
   m_ObjectHideFlags: 0

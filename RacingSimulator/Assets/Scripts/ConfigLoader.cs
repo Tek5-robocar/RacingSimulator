@@ -60,6 +60,8 @@ public class ConfigLoader : MonoBehaviour
                 Debug.Log($"Initializing agent with FOV={config.agents[i].fov}, NbRay={config.agents[i].nbRay}");
                 InitializeAgent(config.agents[i], i);
             }
+
+            Time.timeScale = config.timeSpeed;
         }
         catch (Exception e)
         {
@@ -91,6 +93,11 @@ public class ConfigLoader : MonoBehaviour
         carsController.startPosition = startPosition;
         carsController.trackDropDown = _trackDropDown;
         carsController.Raycast = raycast;
+        carsController.CentralLine = _centralLine;
+        carsController.AlignmentScale = agentConfig.alignmentScale;
+        carsController.SpeedScale = agentConfig.speedScale;
+        carsController.SignedDistanceToCenterScale = agentConfig.signedDistanceToCenterScale;
+        
         for (var i = 0; i < newGo.transform.childCount; i++)
             foreach (var myCamera in newGo.transform.GetChild(i).GetComponents<Camera>())
                 _viewDropDown.AddCamera(myCamera, carsController.CarIndex);
@@ -102,6 +109,7 @@ public class ConfigLoader : MonoBehaviour
     [Serializable]
     public class ConfigData
     {
+        public float timeSpeed;
         public AgentConfig[] agents;
     }
 
@@ -110,5 +118,8 @@ public class ConfigLoader : MonoBehaviour
     {
         public float fov;
         public int nbRay;
+        public float alignmentScale;
+        public float signedDistanceToCenterScale;
+        public float speedScale;
     }
 }

@@ -15,7 +15,7 @@ jobs:
 
       - name: Sync overview.md to README.md
         run: |
-          cp writerside/topics/overview.md README.md
+          cp Writerside/topics/Overview.md README.md
 
       - name: Commit and push if changed
         run: |

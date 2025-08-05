@@ -3,7 +3,7 @@ name: Sync overview.md to README.md
 on:
   push:
     paths:
-      - "writerside/topics/overview.md"
+      - "Writerside/topics/Overview.md"
   workflow_dispatch:
 
 jobs:

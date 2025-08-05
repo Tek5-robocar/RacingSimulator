@@ -69,7 +69,7 @@ you get the decision step which is of DecisionSteps type and terminal step which
 A DecisionSteps NamedTuple containing the observations, the rewards, the agent ids and the action masks for the Agents of the specified behavior. These Agents need an action this step.
 A TerminalSteps NamedTuple containing the observations, rewards, agent ids and interrupted flags of the agents that had their episode terminated last step.
 
-using that you can feed the observations to 
+using that you can feed the observations to
 your AI and gets its output, then you send it like this:
 
 ```python

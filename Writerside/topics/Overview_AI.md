@@ -1,6 +1,6 @@
 # Overview
 
-This is the AI part of the RacingSimulator project. 
+This is the AI part of the RacingSimulator project.
 
 ## What is product/service/concept
 

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rules SYSTEM "https://resources.jetbrains.com/writerside/1.0/redirection-rules.dtd">
+<rules>
+    <!-- format is as follows
+    <rule id="<unique id>">
+        <accepts>page.html</accepts>
+    </rule>
+    -->
+    <rule id="3027c4">
+        <description>Created after removal of "About Help RacingSimulation" from Help RacingSimulator</description>
+        <accepts>starter-topic.html</accepts>
+    </rule>
+    <rule id="477b315d">
+        <description>Created after removal of "About Help RacingSimulator Simulation" from Help RacingSimulator
+            Simulation
+        </description>
+        <accepts>help-racingsimulator-simulation.html</accepts>
+    </rule>
+    <rule id="5ce7a5ae">
+        <description>Created after removal of "About Help RacingSimulator AI" from Help RacingSimulator AI</description>
+        <accepts>help-racingsimulator-ai.html</accepts>
+    </rule>
+    <rule id="4e18da01">
+        <description>Created after removal of "About Help RacingSimulator" from Help RacingSimulator</description>
+        <accepts>help-racingsimulator.html</accepts>
+    </rule>
+    <rule id="280e198a">
+        <description>Created after removal of "Overview" from Help RacingSimulator</description>
+        <accepts>Overview_3.html</accepts>
+    </rule>
+</rules>

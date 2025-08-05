@@ -5,7 +5,7 @@ It is a simulation built using Unity in order to train AIs to drive between two 
 
 ## What is product/service/concept
 
-I chose to use Unity to create a simulation to learn to create my own data. 
+I chose to use Unity to create a simulation to learn to create my own data.
 Unity is easy to start and offer lots of things from car physics to ready to use AI agent connection.
 To allow agents to connect to the simulation I used the ML Agent library which allow me to create agents in the simulation which are waiting to be connected to by scripts (you can also use pre-built agents from Unity, you will only have to change hyperparameters in a config file)
 

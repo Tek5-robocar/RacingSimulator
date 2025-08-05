@@ -4,6 +4,26 @@
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
     <variables></variables>
+    <build-profile instance="hro">
+        <variables>
+            <noindex-content>true</noindex-content>
+        </variables>
+    </build-profile>
+    <build-profile instance="hrs">
+        <variables>
+            <noindex-content>true</noindex-content>
+        </variables>
+    </build-profile>
+    <build-profile instance="hra">
+        <variables>
+            <noindex-content>true</noindex-content>
+        </variables>
+    </build-profile>
+    <build-profile instance="in">
+        <variables>
+            <noindex-content>true</noindex-content>
+        </variables>
+    </build-profile>
     <build-profile instance="hr">
         <variables>
             <noindex-content>true</noindex-content>

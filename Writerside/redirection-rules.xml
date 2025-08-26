@@ -28,4 +28,8 @@
         <description>Created after removal of "Overview" from Help RacingSimulator</description>
         <accepts>Overview_3.html</accepts>
     </rule>
+    <rule id="5915cad9">
+        <description>Created after removal of "3D Printed Parts Overview" from Help RacingSimulator</description>
+        <accepts>Overview_3D_Parts.html</accepts>
+    </rule>
 </rules>

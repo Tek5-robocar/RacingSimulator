@@ -1,32 +1,55 @@
 # Overview
 
-This is the simulation part of the RacingSimulator project.
-It is a simulation built using Unity in order to train AIs to drive between two lines.
+This page introduces the **simulation** component of the RacingSimulator project.  
+It is built in **Unity** and is designed to train AI agents to drive between two parallel lines with increasing autonomy and efficiency.
 
-## What is product/service/concept
+---
 
-I chose to use Unity to create a simulation to learn to create my own data.
-Unity is easy to start and offer lots of things from car physics to ready to use AI agent connection.
-To allow agents to connect to the simulation I used the ML Agent library which allow me to create agents in the simulation which are waiting to be connected to by scripts (you can also use pre-built agents from Unity, you will only have to change hyperparameters in a config file)
+## What Is This?
+
+This simulation was developed using **Unity** to generate training data and experiment with custom AI models.
+
+Unity was chosen for its ease of use, extensive documentation, built-in car physics, and its support for the **ML-Agents** toolkit, which makes it easy to connect external AI agents to the environment.
+
+By using **ML-Agents**, the simulation can host "dummy" agents that wait for external input — for example, from Python scripts.  
+It’s also possible to use Unity's own learning system via config files and adjust hyperparameters for built-in training.
+
+> 📘 If you want to try it yourself, follow the step-by-step setup in the [tutorial](Tutorial_Simulation.md).
+> 🔄 To understand how the AI connects and interacts with the simulation, check out the [AI Overview](Overview_AI.md).
+
+---
 
 ## Glossary
 
-A definition list or a glossary:
+<deflist>
+  <def title="Unity">
+    A widely-used real-time 3D development engine for games and simulations.  
+    It offers tools for physics, animation, rendering, and scripting — ideal for building custom training environments.
+  </def>
 
-First Term
-: This is the definition of the first term.
+  <def title="ML-Agents">
+    Unity's Machine Learning Agents Toolkit.  
+    It enables communication between Unity simulations and external machine learning frameworks such as PyTorch.
+  </def>
 
-Second Term
-: This is the definition of the second term.
+  <def title="Agent">
+    An entity in the simulation that perceives observations and takes actions.  
+    In this project, the agent represents the car you're training.
+  </def>
 
-## References
+  <def title="Environment">
+    The Unity simulation in which the agent operates. Includes visuals, physics, obstacles, tracks, etc.
+  </def>
 
-Here are the lib and packages I used in the simulation:
+  <def title="Observation">
+    The information sent from the simulation to the agent — such as sensor values, raycasts, or positional data.
+  </def>
 
-<procedure>
-<step>ML Agents</step>
-<step>Outline</step>
-<step>decor</step>
-<step>voiture</step>
-<step>car physics</step>
-</procedure>
+  <def title="Action">
+    A response returned by the agent, such as turning, accelerating, or braking.
+  </def>
+
+  <def title="Reward">
+    A numerical value that tells the agent how well it performed — for example, staying between lines or completing laps.
+  </def>
+</deflist>

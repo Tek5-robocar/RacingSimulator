@@ -2,10 +2,10 @@
 
 This page provides a high-level overview of the **RacingSimulator** project, which is split into two main components:
 
-[Simulation](Overview_Simulation.md)  
+[Simulation](./Writerside/topics/Overview_Simulation.md)  
 : The Unity-based environment used to simulate racing scenarios for training.
 
-[AI](Overview_AI.md)  
+[AI](./Writerside/topics/Overview_AI.md)  
 : The Python-based interface and logic that allows your AI agent to connect to and control the simulation.
 
 ---

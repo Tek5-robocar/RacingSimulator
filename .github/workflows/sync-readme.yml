@@ -16,6 +16,8 @@ jobs:
       - name: Sync overview.md to README.md
         run: |
           cp Writerside/topics/Overview_Main.md README.md
+          find README.md -type f -exec sed -i 's|Overview_Simulation|./Writerside/topics/Overview_Simulation|g' {} +
+          find README.md -type f -exec sed -i 's|Overview_AI|./Writerside/topics/Overview_AI|g' {} +
 
       - name: Commit and push if changed
         run: |

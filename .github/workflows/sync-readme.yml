@@ -3,7 +3,7 @@ name: Sync overview.md to README.md
 on:
   push:
     paths:
-      - "Writerside/topics/Overview.md"
+      - "Writerside/topics/Overview_Main.md"
   workflow_dispatch:
 
 jobs:
@@ -15,7 +15,7 @@ jobs:
 
       - name: Sync overview.md to README.md
         run: |
-          cp Writerside/topics/Overview.md README.md
+          cp Writerside/topics/Overview_Main.md README.md
 
       - name: Commit and push if changed
         run: |
